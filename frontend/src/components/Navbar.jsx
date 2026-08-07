@@ -55,6 +55,22 @@ function Navbar() {
                 My Orders
               </Link>
 
+              <Link
+                to="/wallet"
+                className="text-gray-700 hover:text-blue-600 font-medium"
+              >
+                My Wallet
+              </Link>
+
+              {user.email === 'tester@123' && (
+                <Link
+                  to="/admin"
+                  className="text-gray-700 hover:text-blue-600 font-medium"
+                >
+                  Admin Dashboard
+                </Link>
+              )}
+
               <button
                 onClick={handleLogout}
                 className="text-gray-700 hover:text-red-600 font-medium"

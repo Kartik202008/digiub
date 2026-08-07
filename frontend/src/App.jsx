@@ -18,6 +18,7 @@ import AddProduct from './pages/AddProduct';
 import ManageProducts from './pages/ManageProducts';
 import EditProduct from './pages/EditProduct';
 import ManageOrders from './pages/ManageOrders';
+import MyWallet from './pages/MyWallet';
 
 function App() {
   return (
@@ -27,62 +28,64 @@ function App() {
           <Navbar />
 
           <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/product/:id" element={<ProductDetails />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/order-confirmation" element={<OrderConfirmation />} />
-            <Route path="/my-orders" element={<MyOrders />} />
+  {/* Public Routes */}
+  <Route path="/" element={<Home />} />
+  <Route path="/login" element={<Login />} />
+  <Route path="/signup" element={<Signup />} />
+  <Route path="/product/:id" element={<ProductDetails />} />
+  <Route path="/cart" element={<Cart />} />
+  <Route path="/checkout" element={<Checkout />} />
+  <Route path="/order-confirmation" element={<OrderConfirmation />} />
+  <Route path="/my-orders" element={<MyOrders />} />
+  <Route path="/wallet" element={<MyWallet />} />
 
-            {/* Protected Admin Routes */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedAdminRoute>
-                  <AdminDashboard />
-                </ProtectedAdminRoute>
-              }
-            />
+  {/* Protected Admin Routes */}
+  <Route
+    path="/admin"
+    element={
+      <ProtectedAdminRoute>
+        <AdminDashboard />
+      </ProtectedAdminRoute>
+    }
+  />
 
-            <Route
-              path="/admin/add-product"
-              element={
-                <ProtectedAdminRoute>
-                  <AddProduct />
-                </ProtectedAdminRoute>
-              }
-            />
+  <Route
+    path="/admin/add-product"
+    element={
+      <ProtectedAdminRoute>
+        <AddProduct />
+      </ProtectedAdminRoute>
+    }
+  />
 
-            <Route
-              path="/admin/products"
-              element={
-                <ProtectedAdminRoute>
-                  <ManageProducts />
-                </ProtectedAdminRoute>
-              }
-            />
+  <Route
+    path="/admin/products"
+    element={
+      <ProtectedAdminRoute>
+        <ManageProducts />
+      </ProtectedAdminRoute>
+    }
+  />
 
-            <Route
-              path="/admin/edit-product/:id"
-              element={
-                <ProtectedAdminRoute>
-                  <EditProduct />
-                </ProtectedAdminRoute>
-              }
-            />
+  <Route
+    path="/admin/edit-product/:id"
+    element={
+      <ProtectedAdminRoute>
+        <EditProduct />
+      </ProtectedAdminRoute>
+    }
+  />
 
-            <Route
-              path="/admin/orders"
-              element={
-                <ProtectedAdminRoute>
-                  <ManageOrders />
-                </ProtectedAdminRoute>
-              }
-            />
-          </Routes>
+  <Route
+    path="/admin/orders"
+    element={
+      <ProtectedAdminRoute>
+        <ManageOrders />
+      </ProtectedAdminRoute>
+    }
+  />
+</Routes>
+          
         </div>
       </BrowserRouter>
     </CartProvider>
