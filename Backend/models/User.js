@@ -5,27 +5,55 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+
   email: {
     type: String,
     required: true,
     unique: true,
   },
+
   password: {
     type: String,
     required: true,
   },
+
   isAdmin: {
     type: Boolean,
     default: false,
   },
-voucherUsed: {
-  type: Boolean,
-  default: false,
-},
-orderCount: {
-  type: Number,
-  default: 0,
-},
+
+  voucherUsed: {
+    type: Boolean,
+    default: false,
+  },
+
+  orderCount: {
+    type: Number,
+    default: 0,
+  },
+
+  // Wallet balance
+  walletBalance: {
+    type: Number,
+    default: 0,
+  },
+
+  // Wallet transaction history
+  walletTransactions: [
+    {
+      type: {
+        type: String,
+        enum: ['credit', 'debit'],
+      },
+      amount: Number,
+      description: String,
+      date: {
+        type: Date,
+        default: Date.now,
+      },
+    },
+  ],
+
   addresses: [
     {
       fullName: String,
@@ -36,6 +64,7 @@ orderCount: {
       pincode: String,
     },
   ],
+
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
