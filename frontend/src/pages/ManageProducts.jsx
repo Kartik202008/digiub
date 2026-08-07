@@ -5,7 +5,7 @@ function ManageProducts() {
   const [products, setProducts] = useState([]);
 
   const fetchProducts = async () => {
-    const res = await fetch("http://localhost:5000/api/products");
+    const res = await fetch("https://digihub-backend-o00g.onrender.com/api/products");
     const data = await res.json();
     setProducts(data);
   };
@@ -17,7 +17,7 @@ function ManageProducts() {
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this product?")) return;
 
-    await fetch(`http://localhost:5000/api/products/${id}`, {
+    await fetch(`https://digihub-backend-o00g.onrender.com/api/products/${id}`, {
       method: "DELETE",
     });
 

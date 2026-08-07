@@ -11,12 +11,12 @@ function ProductDetails() {
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/products/${id}`)
+    fetch(`https://digihub-backend-o00g.onrender.com/api/products/${id}`)
       .then((res) => res.json())
       .then((data) => {
         setProduct(data);
 
-        fetch("http://localhost:5000/api/products")
+        fetch("https://digihub-backend-o00g.onrender.com/api/products")
           .then((res) => res.json())
           .then((allProducts) => {
             const related = allProducts

@@ -15,7 +15,7 @@ function EditProduct() {
   });
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/products/${id}`)
+    fetch(`https://digihub-backend-o00g.onrender.com/api/products/${id}`)
       .then((res) => res.json())
       .then((data) => {
         setProduct({
@@ -47,7 +47,7 @@ function EditProduct() {
 
     const token = localStorage.getItem("token");
 
-const res = await fetch(`http://localhost:5000/api/products/${id}`, {
+const res = await fetch(`https://digihub-backend-o00g.onrender.com/api/products/${id}`, {
   method: "PUT",
   headers: {
     "Content-Type": "application/json",

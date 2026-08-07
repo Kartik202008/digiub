@@ -7,7 +7,7 @@ function Home() {
   const [selectedCategory, setSelectedCategory] = useState("All Products");
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/products")
+    fetch("https://digihub-backend-o00g.onrender.com/api/products")
       .then((res) => res.json())
       .then((data) => setProducts(data))
       .catch((err) => console.error("Error fetching products:", err));

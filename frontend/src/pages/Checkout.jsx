@@ -31,7 +31,7 @@ function Checkout() {
     try {
       const token = localStorage.getItem("token");
 
-      const res = await fetch("http://localhost:5000/api/coupon/apply", {
+      const res = await fetch("https://digihub-backend-o00g.onrender.com/api/coupon/apply", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -78,7 +78,7 @@ function Checkout() {
     try {
       const token = localStorage.getItem('token');
 
-      const response = await fetch('http://localhost:5000/api/payment/create-order', {
+      const response = await fetch('https://digihub-backend-o00g.onrender.com/api/payment/create-order', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
