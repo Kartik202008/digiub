@@ -15,6 +15,19 @@ router.post('/', async (req, res) => {
   }
 });
 
+// GET MY ORDERS (Logged-in user)
+router.get('/my-orders/:userId', async (req, res) => {
+  try {
+    const orders = await Order.find({ user: req.params.userId }).sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error fetching user orders',
+      error: error.message,
+    });
+  }
+});
+
 // GET ALL ORDERS (Admin)
 router.get('/', async (req, res) => {
   try {
