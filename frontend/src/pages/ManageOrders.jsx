@@ -37,6 +37,29 @@ function ManageOrders() {
       console.error(err);
     }
   };
+  const refundToWallet = async (order) => {
+  try {
+    await fetch(
+      'https://digihub-backend-o00g.onrender.com/api/wallet/refund',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: order.user,
+          amount: order.totalPrice,
+          orderId: order._id,
+        }),
+      }
+    );
+
+    alert('Refund added to customer wallet successfully!');
+  } catch (err) {
+    console.error(err);
+    alert('Refund failed');
+  }
+};
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -95,6 +118,14 @@ function ManageOrders() {
                   <option>Delivered</option>
                   <option>Cancelled</option>
                 </select>
+                {order.orderStatus === 'Cancelled' && order.user && (
+  <button
+    onClick={() => refundToWallet(order)}
+    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 ml-3"
+  >
+    Refund to Wallet
+  </button>
+)}
               </div>
             </div>
           ))}
