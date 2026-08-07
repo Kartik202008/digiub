@@ -59,7 +59,7 @@ function Checkout() {
     const user = JSON.parse(localStorage.getItem("user"));
 
     const orderData = {
-      user: user?._id,
+      user: user?._id || user?.id,
       orderItems: cartItems.map((item) => ({
         product: item._id,
         name: item.name,
