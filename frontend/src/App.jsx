@@ -13,6 +13,7 @@ import AddProduct from "./pages/AddProduct";
 import ManageProducts from "./pages/ManageProducts";
 import EditProduct from "./pages/EditProduct";
 import ManageOrders from "./pages/ManageOrders";
+import MyOrders from "./pages/MyOrders";
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
 <Route path="/order-confirmation" element={<OrderConfirmation />} />
 <Route path="/admin/edit-product/:id" element={<EditProduct />} />
 <Route path="/admin/orders" element={<ManageOrders />} />
+<Route path="/my-orders" element={<MyOrders />} />
           </Routes>
         </div>
       </BrowserRouter>
