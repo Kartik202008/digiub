@@ -6,27 +6,54 @@ function OrderConfirmation() {
 
   if (!order) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-12 text-center">
-        <p className="text-gray-600">No order found.</p>
-        <Link to="/" className="text-blue-600 font-medium">Go back home</Link>
+      <div className="max-w-3xl mx-auto p-6 text-center">
+        <h2 className="text-2xl font-bold text-red-600 mb-4">
+          No order found.
+        </h2>
+        <Link to="/" className="text-blue-600 underline">
+          Go back home
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-12 text-center">
-      <div className="bg-white rounded-lg shadow p-8">
-        <div className="text-green-600 text-5xl mb-4">✓</div>
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Order Placed Successfully!</h1>
-        <p className="text-gray-600 mb-6">Order ID: #{order.id}</p>
+    <div className="max-w-3xl mx-auto p-6">
+      <div className="bg-white rounded-lg shadow p-8 text-center">
+        <div className="text-green-600 text-6xl mb-4">✓</div>
+
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">
+          Order Placed Successfully!
+        </h1>
+
+        <p className="text-gray-600 mb-6">
+          Order ID: #{order._id ? order._id.slice(-6) : order.id}
+        </p>
 
         <div className="text-left bg-gray-50 rounded-md p-4 mb-6">
-          <h3 className="font-medium text-gray-800 mb-2">Delivery to:</h3>
+          <h3 className="font-medium text-gray-800 mb-2">
+            Delivery to:
+          </h3>
+
           <p className="text-gray-600 text-sm">
-            {order.address.fullName}, {order.address.street}, {order.address.city}, {order.address.state} - {order.address.pincode}
+            {order.shippingAddress?.fullName},
+            {" "}
+            {order.shippingAddress?.street},
+            {" "}
+            {order.shippingAddress?.city},
+            {" "}
+            {order.shippingAddress?.state}
+            {" - "}
+            {order.shippingAddress?.pincode}
           </p>
-          <p className="text-gray-600 text-sm mt-2">Payment: {order.paymentMethod}</p>
-          <p className="font-bold text-gray-900 mt-2">Total: ₹{order.total}</p>
+
+          <p className="text-gray-600 text-sm mt-2">
+            Payment: {order.paymentMethod}
+          </p>
+
+          <p className="font-bold text-gray-900 mt-2">
+            Total: ₹{order.totalPrice}
+          </p>
         </div>
 
         <Link
