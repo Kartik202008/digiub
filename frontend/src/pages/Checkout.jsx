@@ -53,18 +53,51 @@ function Checkout() {
     }
   };
 
-  const saveOrderAndRedirect = (paymentStatus) => {
-    const order = {
-      id: Date.now(),
-      items: cartItems,
-      address,
+  const saveOrderAndRedirect = async (paymentStatus) => {
+  try {
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    const orderData = {
+      user: user?._id,
+      orderItems: cartItems.map((item) => ({
+        product: item._id,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        image: item.images && item.images.length > 0 ? item.images[0] : "",
+      })),
+      shippingAddress: address,
       paymentMethod,
-      discount,
-      total: finalTotal,
-      status: paymentStatus === 'paid' ? 'Placed' : 'Placed (COD)',
-      isPaid: paymentStatus === 'paid',
-      date: new Date().toLocaleDateString(),
+      voucherApplied: discount > 0,
+      itemsPrice: cartTotal,
+      discountAmount: discount,
+      totalPrice: finalTotal,
+      isPaid: paymentStatus === "paid",
+      orderStatus: "Placed",
     };
+
+    const res = await fetch(
+      "https://digihub-backend-o00g.onrender.com/api/orders",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(orderData),
+      }
+    );
+
+    const order = await res.json();
+
+    clearCart();
+    navigate("/order-confirmation", { state: { order } });
+  } catch (error) {
+    console.error(error);
+    alert("Failed to save order. Please try again.");
+  }
+};
 
     const existingOrders = JSON.parse(localStorage.getItem('orders')) || [];
     localStorage.setItem('orders', JSON.stringify([...existingOrders, order]));
@@ -97,9 +130,9 @@ console.log('Razorpay order response:', razorpayOrder);
         name: 'DigiHub',
         description: 'Order Payment',
         order_id: razorpayOrder.id,
-        handler: function (response) {
-          saveOrderAndRedirect('paid');
-        },
+        handler: async function (response) {
+  await saveOrderAndRedirect('paid');
+},
         prefill: {
           name: address.fullName,
           contact: address.phone,
@@ -122,15 +155,15 @@ console.log('Razorpay order response:', razorpayOrder);
     }
   };
 
-  const handlePlaceOrder = (e) => {
-    e.preventDefault();
+  const handlePlaceOrder = async (e) => {
+  e.preventDefault();
 
-    if (paymentMethod === 'COD') {
-      saveOrderAndRedirect('cod');
-    } else {
-      handleRazorpayPayment();
-    }
-  };
+  if (paymentMethod === "COD") {
+    await saveOrderAndRedirect("cod");
+  } else {
+    handleRazorpayPayment();
+  }
+};
 
   if (cartItems.length === 0) {
     return (

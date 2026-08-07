@@ -12,6 +12,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AddProduct from "./pages/AddProduct";
 import ManageProducts from "./pages/ManageProducts";
 import EditProduct from "./pages/EditProduct";
+import ManageOrders from "./pages/ManageOrders";
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
             <Route path="/admin/products" element={<ManageProducts />} />
 <Route path="/order-confirmation" element={<OrderConfirmation />} />
 <Route path="/admin/edit-product/:id" element={<EditProduct />} />
+<Route path="/admin/orders" element={<ManageOrders />} />
           </Routes>
         </div>
       </BrowserRouter>
