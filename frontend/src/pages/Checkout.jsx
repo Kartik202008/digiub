@@ -98,14 +98,6 @@ function Checkout() {
     alert("Failed to save order. Please try again.");
   }
 };
-
-    const existingOrders = JSON.parse(localStorage.getItem('orders')) || [];
-    localStorage.setItem('orders', JSON.stringify([...existingOrders, order]));
-
-    clearCart();
-    navigate('/order-confirmation', { state: { order } });
-  };
-
   const handleRazorpayPayment = async () => {
     setLoading(true);
     try {
