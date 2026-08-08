@@ -28,14 +28,14 @@ function AddProduct() {
     }
 
     const productData = {
-      name: product.name,
-      description: product.description,
-      category: product.category,
+      name: product.name.trim(),
+      description: product.description.trim(),
+      category: product.category.trim(),
       price: price,
       originalPrice: originalPrice,
       discount: discount,
       stock: Number(product.stock),
-      images: [product.image],
+      images: [product.image.trim()],
     };
 
     try {
@@ -64,10 +64,12 @@ function AddProduct() {
           stock: "",
         });
       } else {
-        alert(data.message || "Failed to add product");
+        console.log("FULL ERROR DATA:", data);
+        alert(JSON.stringify(data));
       }
     } catch (err) {
-      alert("Server error");
+      console.log("CATCH ERROR:", err);
+      alert("Server error: " + err.message);
     }
   };
 
@@ -80,7 +82,21 @@ function AddProduct() {
           <input name="name" placeholder="Product Name" value={product.name} onChange={handleChange} className="w-full border p-2 rounded" />
           <input name="originalPrice" placeholder="Original Price (MRP)" value={product.originalPrice} onChange={handleChange} className="w-full border p-2 rounded" />
           <input name="price" placeholder="Selling Price" value={product.price} onChange={handleChange} className="w-full border p-2 rounded" />
-          <input name="category" placeholder="Category" value={product.category} onChange={handleChange} className="w-full border p-2 rounded" />
+
+          <select
+            name="category"
+            value={product.category}
+            onChange={handleChange}
+            className="w-full border p-2 rounded"
+            required
+          >
+            <option value="">Select Category</option>
+            <option value="Mobile Accessories">Mobile Accessories</option>
+            <option value="Intel Processors">Intel Processors</option>
+            <option value="Pendrives">Pendrives</option>
+            <option value="Laptop Accessories">Laptop Accessories</option>
+          </select>
+
           <input name="image" placeholder="Image URL" value={product.image} onChange={handleChange} className="w-full border p-2 rounded" />
           <textarea name="description" placeholder="Description" value={product.description} onChange={handleChange} className="w-full border p-2 rounded" />
           <input name="stock" placeholder="Stock" value={product.stock} onChange={handleChange} className="w-full border p-2 rounded" />
