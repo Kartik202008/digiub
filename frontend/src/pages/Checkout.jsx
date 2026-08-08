@@ -59,14 +59,15 @@ function Checkout() {
       const user = JSON.parse(localStorage.getItem("user"));
 
       const orderData = {
-        user: user?._id || user?.id,
-        orderItems: cartItems.map((item) => ({
-          product: item._id,
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-          image: item.images && item.images.length > 0 ? item.images[0] : "",
-        })),
+  user: user?._id || user?.id,
+  orderItems: cartItems.map((item) => ({
+    product: item.product || item._id || item.id,
+    name: item.name,
+    quantity: item.quantity,
+    price: item.price,
+    image: item.image || (item.images && item.images.length > 0 ? item.images[0] : ""),
+  })),
+  
         shippingAddress: address,
         paymentMethod,
         voucherApplied: discount > 0,
