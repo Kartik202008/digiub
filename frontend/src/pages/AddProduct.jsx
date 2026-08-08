@@ -4,6 +4,7 @@ function AddProduct() {
   const [product, setProduct] = useState({
     name: "",
     price: "",
+    originalPrice: "",
     category: "",
     image: "",
     description: "",
@@ -15,17 +16,27 @@ function AddProduct() {
   };
 
   const handleSubmit = async (e) => {
-     e.preventDefault();
-     
+    e.preventDefault();
+
+    const price = Number(product.price);
+    const originalPrice = Number(product.originalPrice);
+
+    // Calculate discount % automatically
+    let discount = 0;
+    if (originalPrice > price && originalPrice > 0) {
+      discount = Math.round(((originalPrice - price) / originalPrice) * 100);
+    }
+
     const productData = {
-  name: product.name,
-  description: product.description,
-  category: product.category,
-  price: Number(product.price),
-  stock: Number(product.stock),
-  images: [product.image], // image ko array bana diya
-};
-   
+      name: product.name,
+      description: product.description,
+      category: product.category,
+      price: price,
+      originalPrice: originalPrice,
+      discount: discount,
+      stock: Number(product.stock),
+      images: [product.image],
+    };
 
     try {
       const token = localStorage.getItem("token");
@@ -46,6 +57,7 @@ function AddProduct() {
         setProduct({
           name: "",
           price: "",
+          originalPrice: "",
           category: "",
           image: "",
           description: "",
@@ -66,7 +78,8 @@ function AddProduct() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <input name="name" placeholder="Product Name" value={product.name} onChange={handleChange} className="w-full border p-2 rounded" />
-          <input name="price" placeholder="Price" value={product.price} onChange={handleChange} className="w-full border p-2 rounded" />
+          <input name="originalPrice" placeholder="Original Price (MRP)" value={product.originalPrice} onChange={handleChange} className="w-full border p-2 rounded" />
+          <input name="price" placeholder="Selling Price" value={product.price} onChange={handleChange} className="w-full border p-2 rounded" />
           <input name="category" placeholder="Category" value={product.category} onChange={handleChange} className="w-full border p-2 rounded" />
           <input name="image" placeholder="Image URL" value={product.image} onChange={handleChange} className="w-full border p-2 rounded" />
           <textarea name="description" placeholder="Description" value={product.description} onChange={handleChange} className="w-full border p-2 rounded" />

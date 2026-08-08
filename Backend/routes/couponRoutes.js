@@ -18,11 +18,15 @@ router.post("/apply", protect, async (req, res) => {
       return res.status(400).json({ message: "Invalid coupon code" });
     }
 
-    if (user.voucherUsed || user.orderCount > 0) {
+    if (user.voucherUsed) {
       return res.status(400).json({
-        message: "Coupon already used or not eligible",
+        message: "Coupon already used",
       });
     }
+
+    // Mark coupon as used for this user
+    user.voucherUsed = true;
+    await user.save();
 
     res.json({
       success: true,
