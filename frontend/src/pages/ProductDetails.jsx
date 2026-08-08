@@ -21,8 +21,7 @@ function ProductDetails() {
           .then((allProducts) => {
             const related = allProducts
               .filter(
-                (p) =>
-                  p.category === data.category && p._id !== data._id
+                (p) => p.category === data.category && p._id !== data._id
               )
               .slice(0, 4);
 
@@ -33,11 +32,7 @@ function ProductDetails() {
   }, [id]);
 
   if (!product) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
-      </div>
-    );
+    return <div className="p-6">Loading...</div>;
   }
 
   const image =
@@ -46,10 +41,10 @@ function ProductDetails() {
       : "https://via.placeholder.com/600x600?text=No+Image";
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="p-6">
       <Link
         to="/"
-        className="text-blue-600 hover:underline mb-6 inline-block"
+        className="text-blue-600 mb-5 inline-block"
       >
         ← Back to Home
       </Link>
@@ -74,20 +69,27 @@ function ProductDetails() {
             Category: {product.category}
           </p>
 
+          {/* Rating display only */}
+          <div className="mb-5">
+            <span className="text-yellow-500 text-2xl">
+              {"★".repeat(Math.round(product.rating || 0))}
+              {"☆".repeat(5 - Math.round(product.rating || 0))}
+            </span>
+
+            <p>
+              {product.rating ? product.rating.toFixed(1) : 0}/5 (
+              {product.numReviews} reviews)
+            </p>
+          </div>
+
           <div className="flex items-center gap-3 mb-4">
-            <span className="text-4xl font-bold text-gray-900">
+            <span className="text-4xl font-bold">
               ₹{product.price}
             </span>
 
             {product.originalPrice && (
               <span className="text-xl text-gray-400 line-through">
                 ₹{product.originalPrice}
-              </span>
-            )}
-
-            {product.discount > 0 && (
-              <span className="text-green-600 font-semibold">
-                {product.discount}% OFF
               </span>
             )}
           </div>
@@ -104,7 +106,7 @@ function ProductDetails() {
             }`}
           >
             {product.stock > 0
-              ? `In Stock (${product.stock} available)`
+              ? `In Stock (${product.stock})`
               : "Out of Stock"}
           </p>
 
@@ -119,32 +121,30 @@ function ProductDetails() {
               -
             </button>
 
-            <span className="text-lg font-semibold">
-              {quantity}
-            </span>
+            <span>{quantity}</span>
 
             <button
-              onClick={() =>
-                setQuantity((q) => q + 1)
-              }
+              onClick={() => setQuantity((q) => q + 1)}
               className="px-3 py-1 bg-gray-200 rounded"
             >
               +
             </button>
           </div>
 
-          {/* Buttons */}
           <div className="flex gap-4">
             <button
               onClick={() =>
-                addToCart({ ...product, quantity })
+                addToCart({
+                  ...product,
+                  quantity,
+                })
               }
-              className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-medium"
+              className="flex-1 bg-blue-600 text-white py-3 rounded-lg"
             >
               Add to Cart
             </button>
 
-            <button className="flex-1 bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 transition font-medium">
+            <button className="flex-1 bg-orange-500 text-white py-3 rounded-lg">
               Buy Now
             </button>
           </div>
@@ -160,21 +160,23 @@ function ProductDetails() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {relatedProducts.map((p) => (
-              <Link key={p._id} to={`/product/${p._id}`}>
-                <div className="bg-white rounded-lg shadow p-3 hover:shadow-lg transition">
+              <Link
+                key={p._id}
+                to={`/product/${p._id}`}
+              >
+                <div className="bg-white rounded-lg shadow p-3">
                   <img
                     src={
-                      p.images && p.images.length > 0
-                        ? p.images[0]
-                        : "https://via.placeholder.com/300x300?text=No+Image"
+                      p.images?.[0] ||
+                      "https://via.placeholder.com/300"
                     }
+                    className="w-full h-40 object-contain"
                     alt={p.name}
-                    className="w-full h-40 object-contain mb-3"
                   />
-                  <h3 className="font-medium text-gray-800 line-clamp-2">
-                    {p.name}
-                  </h3>
-                  <p className="text-blue-600 font-bold mt-2">
+
+                  <h3 className="font-medium">{p.name}</h3>
+
+                  <p className="text-blue-600 font-bold">
                     ₹{p.price}
                   </p>
                 </div>
