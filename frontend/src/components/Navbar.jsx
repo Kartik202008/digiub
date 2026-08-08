@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
 
 function Navbar() {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
   const { cartCount } = useCart();
+  const { wishlistCount } = useWishlist();
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -62,7 +64,19 @@ function Navbar() {
                 My Wallet
               </Link>
 
-              {user.email === 'tester@123' && (
+              <Link
+                to="/wishlist"
+                className="relative text-gray-700 hover:text-blue-600 font-medium"
+              >
+                Wishlist
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {wishlistCount}
+                  </span>
+                )}
+              </Link>
+
+              {user.email === 'test@123' && (
                 <Link
                   to="/admin"
                   className="text-gray-700 hover:text-blue-600 font-medium"

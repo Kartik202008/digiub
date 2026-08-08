@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { useWishlist } from "../context/WishlistContext";
 
 function ProductDetails() {
   const { id } = useParams();
   const { addToCart } = useCart();
+  const { addToWishlist, isInWishlist } = useWishlist();
 
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -69,19 +71,6 @@ function ProductDetails() {
             Category: {product.category}
           </p>
 
-          {/* Rating display only */}
-          <div className="mb-5">
-            <span className="text-yellow-500 text-2xl">
-              {"★".repeat(Math.round(product.rating || 0))}
-              {"☆".repeat(5 - Math.round(product.rating || 0))}
-            </span>
-
-            <p>
-              {product.rating ? product.rating.toFixed(1) : 0}/5 (
-              {product.numReviews} reviews)
-            </p>
-          </div>
-
           <div className="flex items-center gap-3 mb-4">
             <span className="text-4xl font-bold">
               ₹{product.price}
@@ -131,23 +120,30 @@ function ProductDetails() {
             </button>
           </div>
 
-          <div className="flex gap-4">
-            <button
-              onClick={() =>
-                addToCart({
-                  ...product,
-                  quantity,
-                })
-              }
-              className="flex-1 bg-blue-600 text-white py-3 rounded-lg"
-            >
-              Add to Cart
-            </button>
+         <div className="flex gap-4 items-center">
+  <button
+    onClick={() =>
+      addToCart({
+        ...product,
+        quantity,
+      })
+    }
+    className="flex-1 bg-blue-600 text-white py-3 rounded-lg"
+  >
+    Add to Cart
+  </button>
 
-            <button className="flex-1 bg-orange-500 text-white py-3 rounded-lg">
-              Buy Now
-            </button>
-          </div>
+  <button
+    onClick={() => addToWishlist(product)}
+    className="w-14 h-14 border rounded-lg flex items-center justify-center text-2xl hover:bg-red-50"
+  >
+    {isInWishlist(product._id) ? "❤️" : "🤍"}
+  </button>
+
+  <button className="flex-1 bg-orange-500 text-white py-3 rounded-lg">
+    Buy Now
+  </button>
+</div>
         </div>
       </div>
 
