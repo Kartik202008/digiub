@@ -84,18 +84,23 @@ function AddProduct() {
           <input name="price" placeholder="Selling Price" value={product.price} onChange={handleChange} className="w-full border p-2 rounded" />
 
           <select
-            name="category"
-            value={product.category}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
-            required
-          >
-            <option value="">Select Category</option>
-            <option value="Mobile Accessories">Mobile Accessories</option>
-            <option value="Intel Processors">Intel Processors</option>
-            <option value="Pendrives">Pendrives</option>
-            <option value="Laptop Accessories">Laptop Accessories</option>
-          </select>
+  name="category"
+  value={product.category}
+  onChange={handleChange}
+  className="w-full border p-2 rounded"
+  required
+>
+  <option value="">Select Category</option>
+  <option value="Mobile Accessories">Mobile Accessories</option>
+  <option value="Intel Processors">Intel Processors</option>
+  <option value="Pendrives">Pendrives</option>
+  <option value="Laptop Accessories">Laptop Accessories</option>
+  <option value="Headphones/Earphones">Headphones/Earphones</option>
+  <option value="Smartwatches">Smartwatches</option>
+  <option value="Chargers & Cables">Chargers & Cables</option>
+  <option value="Speakers">Speakers</option>
+  <option value="Power Banks">Power Banks</option>
+</select>
 
           <input name="image" placeholder="Image URL" value={product.image} onChange={handleChange} className="w-full border p-2 rounded" />
           <textarea name="description" placeholder="Description" value={product.description} onChange={handleChange} className="w-full border p-2 rounded" />

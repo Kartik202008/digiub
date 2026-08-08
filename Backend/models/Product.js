@@ -36,16 +36,21 @@ const productSchema = new mongoose.Schema(
       required: true,
     },
 
-    category: {
-      type: String,
-      required: true,
-      enum: [
-        'Mobile Accessories',
-        'Intel Processors',
-        'Pendrives',
-        'Laptop Accessories',
-      ],
-    },
+   category: {
+  type: String,
+  required: true,
+  enum: [
+    'Mobile Accessories',
+    'Intel Processors',
+    'Pendrives',
+    'Laptop Accessories',
+    'Headphones/Earphones',
+    'Smartwatches',
+    'Chargers & Cables',
+    'Speakers',
+    'Power Banks',
+  ],
+},
 
     price: {
       type: Number,

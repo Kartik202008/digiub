@@ -66,7 +66,7 @@ function Navbar() {
                   </span>
                 )}
               </Link>
-              {user.email === 'test@123' && (
+              {user.email === 'kg0493793@gmail.com' && (
                 <Link to="/admin" className="text-gray-700 hover:text-blue-600 font-medium">
                   Admin Dashboard
                 </Link>
@@ -142,7 +142,7 @@ function Navbar() {
               <Link to="/wishlist" onClick={closeMenu} className="text-gray-700 hover:text-blue-600 font-medium">
                 Wishlist {wishlistCount > 0 && `(${wishlistCount})`}
               </Link>
-              {user.email === 'test@123' && (
+              {user.email === 'kg0493793@gmail.com' && (
                 <Link to="/admin" onClick={closeMenu} className="text-gray-700 hover:text-blue-600 font-medium">
                   Admin Dashboard
                 </Link>
