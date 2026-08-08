@@ -22,6 +22,7 @@ import EditProduct from "./pages/EditProduct";
 import ManageOrders from "./pages/ManageOrders";
 import Wishlist from './pages/Wishlist';
 import CategoryPage from './pages/CategoryPage';
+import TrackOrder from "./pages/TrackOrder";
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
             <Route path="/wallet" element={<MyWallet />} />
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/category/:categoryName" element={<CategoryPage />} />
+            <Route path="/track-order/:id" element={<TrackOrder />} />
 
             {/* Admin Routes */}
             <Route

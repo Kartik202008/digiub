@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 function MyOrders() {
 const [orders, setOrders] = useState([]);
@@ -175,7 +176,14 @@ return ( <div className="p-6"> <h1 className="text-3xl font-bold mb-6">My Orders
             </div>
           )}
 
-          <div className="mt-4 flex gap-3">
+                    <div className="mt-4 flex flex-wrap gap-3">
+            <Link
+              to={`/track-order/${order._id}`}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+            >
+              Track Order
+            </Link>
+
             {(order.orderStatus === 'Placed' ||
               order.orderStatus === 'Processing') && (
               <button
