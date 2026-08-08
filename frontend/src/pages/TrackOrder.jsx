@@ -111,9 +111,17 @@ return ( <div className="p-6 max-w-3xl mx-auto"> <Link to="/my-orders" className
 
     <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
-        <p className="text-sm text-gray-500">Estimated delivery</p>
-        <p className="font-bold text-blue-700 text-lg">11 Aug 2026</p>
-      </div>
+  <p className="text-sm text-gray-500">Estimated delivery</p>
+  <p className="font-bold text-blue-700 text-lg">
+    {new Date(
+      new Date(order.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000
+    ).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    })}
+  </p>
+</div>
 
       <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
         <p className="text-sm text-gray-500">Current location</p>
