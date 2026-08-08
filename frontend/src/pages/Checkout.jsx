@@ -54,50 +54,57 @@ function Checkout() {
   };
 
   const saveOrderAndRedirect = async (paymentStatus) => {
-  try {
-    const token = localStorage.getItem("token");
-    const user = JSON.parse(localStorage.getItem("user"));
+    try {
+      const token = localStorage.getItem("token");
+      const user = JSON.parse(localStorage.getItem("user"));
 
-    const orderData = {
-      user: user?._id || user?.id,
-      orderItems: cartItems.map((item) => ({
-        product: item._id,
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-        image: item.images && item.images.length > 0 ? item.images[0] : "",
-      })),
-      shippingAddress: address,
-      paymentMethod,
-      voucherApplied: discount > 0,
-      itemsPrice: cartTotal,
-      discountAmount: discount,
-      totalPrice: finalTotal,
-      isPaid: paymentStatus === "paid",
-      orderStatus: "Placed",
-    };
+      const orderData = {
+        user: user?._id || user?.id,
+        orderItems: cartItems.map((item) => ({
+          product: item._id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          image: item.images && item.images.length > 0 ? item.images[0] : "",
+        })),
+        shippingAddress: address,
+        paymentMethod,
+        voucherApplied: discount > 0,
+        itemsPrice: cartTotal,
+        discountAmount: discount,
+        totalPrice: finalTotal,
+        isPaid: paymentStatus === "paid",
+        orderStatus: "Placed",
+      };
 
-    const res = await fetch(
-      "https://digihub-backend-o00g.onrender.com/api/orders",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(orderData),
+      const res = await fetch(
+        "https://digihub-backend-o00g.onrender.com/api/orders",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(orderData),
+        }
+      );
+
+      const order = await res.json();
+
+      if (!res.ok) {
+        console.error("Order creation failed:", order);
+        alert(order.message || "Failed to save order. Please try again.");
+        return;
       }
-    );
 
-    const order = await res.json();
+      clearCart();
+      navigate("/order-confirmation", { state: { order } });
+    } catch (error) {
+      console.error(error);
+      alert("Failed to save order. Please try again.");
+    }
+  };
 
-    clearCart();
-    navigate("/order-confirmation", { state: { order } });
-  } catch (error) {
-    console.error(error);
-    alert("Failed to save order. Please try again.");
-  }
-};
   const handleRazorpayPayment = async () => {
     setLoading(true);
     try {
@@ -113,7 +120,7 @@ function Checkout() {
       });
 
       const razorpayOrder = await response.json();
-console.log('Razorpay order response:', razorpayOrder);
+      console.log('Razorpay order response:', razorpayOrder);
 
       const options = {
         key: 'rzp_test_TMoOw1DIh7h8IR',
@@ -123,8 +130,8 @@ console.log('Razorpay order response:', razorpayOrder);
         description: 'Order Payment',
         order_id: razorpayOrder.id,
         handler: async function (response) {
-  await saveOrderAndRedirect('paid');
-},
+          await saveOrderAndRedirect('paid');
+        },
         prefill: {
           name: address.fullName,
           contact: address.phone,
@@ -148,14 +155,14 @@ console.log('Razorpay order response:', razorpayOrder);
   };
 
   const handlePlaceOrder = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (paymentMethod === "COD") {
-    await saveOrderAndRedirect("cod");
-  } else {
-    handleRazorpayPayment();
-  }
-};
+    if (paymentMethod === "COD") {
+      await saveOrderAndRedirect("cod");
+    } else {
+      handleRazorpayPayment();
+    }
+  };
 
   if (cartItems.length === 0) {
     return (

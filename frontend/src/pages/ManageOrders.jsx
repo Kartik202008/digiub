@@ -37,29 +37,39 @@ function ManageOrders() {
       console.error(err);
     }
   };
-  const refundToWallet = async (order) => {
-  try {
-    await fetch(
-      'https://digihub-backend-o00g.onrender.com/api/wallet/refund',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: order.user,
-          amount: order.totalPrice,
-          orderId: order._id,
-        }),
-      }
-    );
 
-    alert('Refund added to customer wallet successfully!');
-  } catch (err) {
-    console.error(err);
-    alert('Refund failed');
-  }
-};
+  const refundToWallet = async (order) => {
+    try {
+      await fetch(
+        'https://digihub-backend-o00g.onrender.com/api/wallet/refund',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: order.user,
+            amount: order.totalPrice,
+            orderId: order._id,
+          }),
+        }
+      );
+
+      alert('Refund added to customer wallet successfully!');
+    } catch (err) {
+      console.error(err);
+      alert('Refund failed');
+    }
+  };
+
+  const acceptReturn = async (order) => {
+    await updateStatus(order._id, "Returned");
+    await refundToWallet(order);
+  };
+
+  const declineReturn = async (order) => {
+    await updateStatus(order._id, "Return Declined");
+  };
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -102,7 +112,7 @@ function ManageOrders() {
                 ))}
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <span className="font-medium">Status:</span>
 
                 <select
@@ -117,15 +127,36 @@ function ManageOrders() {
                   <option>Shipped</option>
                   <option>Delivered</option>
                   <option>Cancelled</option>
+                  <option>Return Requested</option>
+                  <option>Returned</option>
+                  <option>Return Declined</option>
                 </select>
+
                 {order.orderStatus === 'Cancelled' && order.user && (
-  <button
-    onClick={() => refundToWallet(order)}
-    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 ml-3"
-  >
-    Refund to Wallet
-  </button>
-)}
+                  <button
+                    onClick={() => refundToWallet(order)}
+                    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                  >
+                    Refund to Wallet
+                  </button>
+                )}
+
+                {order.orderStatus === 'Return Requested' && (
+                  <>
+                    <button
+                      onClick={() => acceptReturn(order)}
+                      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                    >
+                      Accept Return
+                    </button>
+                    <button
+                      onClick={() => declineReturn(order)}
+                      className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                    >
+                      Decline Return
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ))}
