@@ -1,6 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const Razorpay = require('razorpay');
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
 
 // GET WALLET DETAILS
 router.get('/:userId', async (req, res) => {
@@ -23,7 +29,28 @@ router.get('/:userId', async (req, res) => {
   }
 });
 
-// ADD MONEY TO WALLET
+// CREATE RAZORPAY ORDER FOR WALLET TOP-UP
+router.post('/create-order', async (req, res) => {
+  try {
+    const { amount } = req.body;
+
+    const options = {
+      amount: amount * 100,
+      currency: 'INR',
+      receipt: `wallet_${Date.now()}`,
+    };
+
+    const order = await razorpay.orders.create(options);
+    res.json(order);
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error creating wallet payment order',
+      error: error.message,
+    });
+  }
+});
+
+// ADD MONEY TO WALLET (after successful payment)
 router.post('/add-money', async (req, res) => {
   try {
     const { userId, amount } = req.body;
@@ -55,6 +82,7 @@ router.post('/add-money', async (req, res) => {
     });
   }
 });
+
 // REFUND TO WALLET
 router.post('/refund', async (req, res) => {
   try {
