@@ -88,9 +88,14 @@ router.post('/login', async (req, res) => {
 // FORGOT PASSWORD - send reset email
 router.post('/forgot-password', async (req, res) => {
   try {
-   const email = req.body.email.trim().toLowerCase();
+    const email = req.body.email.trim().toLowerCase();
+
+    console.log("Forgot password email received:", email);
 
     const user = await User.findOne({ email });
+
+    console.log("User found:", user);
+
     if (!user) {
       return res.status(404).json({ message: 'No account found with this email' });
     }
@@ -98,10 +103,9 @@ router.post('/forgot-password', async (req, res) => {
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
     user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
+    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000;
     await user.save();
 
-    // Setup email transporter
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -118,14 +122,14 @@ router.post('/forgot-password', async (req, res) => {
       subject: 'Reset your DigiHub password',
       html: `
         <p>Hi ${user.name},</p>
-        <p>You requested to reset your password. Click the link below to set a new password. This link expires in 15 minutes.</p>
+        <p>Click the link below to reset your password:</p>
         <a href="${resetLink}">${resetLink}</a>
-        <p>If you didn't request this, you can safely ignore this email.</p>
       `,
     });
 
     res.json({ message: 'Password reset link sent to your email' });
   } catch (error) {
+    console.error("Forgot password error:", error);
     res.status(500).json({ message: 'Error sending reset email', error: error.message });
   }
 });
