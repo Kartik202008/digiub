@@ -23,6 +23,8 @@ import ManageOrders from "./pages/ManageOrders";
 import Wishlist from './pages/Wishlist';
 import CategoryPage from './pages/CategoryPage';
 import TrackOrder from "./pages/TrackOrder";
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 function App() {
   return (
@@ -45,6 +47,8 @@ function App() {
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/category/:categoryName" element={<CategoryPage />} />
             <Route path="/track-order/:id" element={<TrackOrder />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+<Route path="/reset-password/:token" element={<ResetPassword />} />
 
             {/* Admin Routes */}
             <Route

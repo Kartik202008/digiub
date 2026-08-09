@@ -1,6 +1,8 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const User = require('../models/User');
 
 const router = express.Router();
@@ -78,6 +80,78 @@ router.post('/login', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Login failed', error: error.message });
+  }
+});
+
+// FORGOT PASSWORD - send reset email
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'No account found with this email' });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
+    await user.save();
+
+    // Setup email transporter
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const resetLink = `https://digihub-gules.vercel.app/reset-password/${resetToken}`;
+
+    await transporter.sendMail({
+      from: `"DigiHub" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: 'Reset your DigiHub password',
+      html: `
+        <p>Hi ${user.name},</p>
+        <p>You requested to reset your password. Click the link below to set a new password. This link expires in 15 minutes.</p>
+        <a href="${resetLink}">${resetLink}</a>
+        <p>If you didn't request this, you can safely ignore this email.</p>
+      `,
+    });
+
+    res.json({ message: 'Password reset link sent to your email' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error sending reset email', error: error.message });
+  }
+});
+
+// RESET PASSWORD - verify token and set new password
+router.post('/reset-password/:token', async (req, res) => {
+  try {
+    const { password } = req.body;
+    const { token } = req.params;
+
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Reset link is invalid or has expired' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    user.password = hashedPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.json({ message: 'Password reset successful. You can now login.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error resetting password', error: error.message });
   }
 });
 
