@@ -116,6 +116,8 @@ router.post('/forgot-password', async (req, res) => {
 
     const resetLink = `https://digihub-gules.vercel.app/reset-password/${resetToken}`;
 
+    console.log("About to send email...");
+
     await transporter.sendMail({
       from: `"DigiHub" <${process.env.EMAIL_USER}>`,
       to: user.email,
@@ -126,6 +128,8 @@ router.post('/forgot-password', async (req, res) => {
         <a href="${resetLink}">${resetLink}</a>
       `,
     });
+
+    console.log("Email sent successfully");
 
     res.json({ message: 'Password reset link sent to your email' });
   } catch (error) {
