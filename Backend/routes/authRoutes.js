@@ -10,7 +10,9 @@ const router = express.Router();
 // SIGNUP
 router.post('/signup', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const name = req.body.name.trim();
+const email = req.body.email.trim().toLowerCase();
+const password = req.body.password;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -51,7 +53,8 @@ router.post('/signup', async (req, res) => {
 // LOGIN
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email = req.body.email.trim().toLowerCase();
+    const password = req.body.password;
 
     const user = await User.findOne({ email });
     if (!user) {
@@ -82,11 +85,10 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Login failed', error: error.message });
   }
 });
-
 // FORGOT PASSWORD - send reset email
 router.post('/forgot-password', async (req, res) => {
   try {
-    const { email } = req.body;
+   const email = req.body.email.trim().toLowerCase();
 
     const user = await User.findOne({ email });
     if (!user) {
