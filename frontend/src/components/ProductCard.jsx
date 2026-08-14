@@ -16,6 +16,7 @@ function ProductCard({ product }) {
       price: Number(product.price),
       image: product.images?.[0] || "",
       quantity: 1,
+      codAvailable: product.codAvailable !== false,
     });
   };
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 
@@ -9,6 +9,9 @@ function Checkout() {
   const [couponCode, setCouponCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [couponMessage, setCouponMessage] = useState("");
+
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [useWallet, setUseWallet] = useState(false);
 
   const [address, setAddress] = useState({
     fullName: '',
@@ -21,7 +24,28 @@ function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState('COD');
   const [loading, setLoading] = useState(false);
 
-  const finalTotal = Math.max(0, cartTotal - discount);
+  const user = JSON.parse(localStorage.getItem('user'));
+  const userId = user?._id || user?.id;
+
+  const afterCoupon = Math.max(0, cartTotal - discount);
+  const walletUsedAmount = useWallet ? Math.min(walletBalance, afterCoupon) : 0;
+  const finalTotal = Math.max(0, afterCoupon - walletUsedAmount);
+
+  const codBlocked = cartItems.some((item) => item.codAvailable === false);
+
+  useEffect(() => {
+    if (!userId) return;
+    fetch(`https://digihub-backend-o00g.onrender.com/api/wallet/${userId}`)
+      .then((res) => res.json())
+      .then((data) => setWalletBalance(data.balance || 0))
+      .catch((err) => console.error(err));
+  }, [userId]);
+
+  useEffect(() => {
+    if (codBlocked && paymentMethod === 'COD') {
+      setPaymentMethod('UPI');
+    }
+  }, [codBlocked, paymentMethod]);
 
   const handleChange = (e) => {
     setAddress({ ...address, [e.target.name]: e.target.value });
@@ -53,28 +77,40 @@ function Checkout() {
     }
   };
 
+  const deductWalletIfUsed = async () => {
+    if (walletUsedAmount > 0) {
+      try {
+        await fetch("https://digihub-backend-o00g.onrender.com/api/wallet/deduct", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, amount: walletUsedAmount }),
+        });
+      } catch (error) {
+        console.error("Wallet deduction failed:", error);
+      }
+    }
+  };
+
   const saveOrderAndRedirect = async (paymentStatus) => {
     try {
       const token = localStorage.getItem("token");
-      const user = JSON.parse(localStorage.getItem("user"));
 
       const orderData = {
-  user: user?._id || user?.id,
-  orderItems: cartItems.map((item) => ({
-    product: item.product || item._id || item.id,
-    name: item.name,
-    quantity: item.quantity,
-    price: item.price,
-    image: item.image || (item.images && item.images.length > 0 ? item.images[0] : ""),
-  })),
-  
+        user: userId,
+        orderItems: cartItems.map((item) => ({
+          product: item.product || item._id || item.id,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          image: item.image || (item.images && item.images.length > 0 ? item.images[0] : ""),
+        })),
         shippingAddress: address,
-        paymentMethod,
+        paymentMethod: finalTotal === 0 ? 'Wallet' : paymentMethod,
         voucherApplied: discount > 0,
         itemsPrice: cartTotal,
         discountAmount: discount,
-        totalPrice: finalTotal,
-        isPaid: paymentStatus === "paid",
+        totalPrice: Math.max(0, afterCoupon - walletUsedAmount),
+        isPaid: paymentStatus === "paid" || finalTotal === 0,
         orderStatus: "Placed",
       };
 
@@ -97,6 +133,8 @@ function Checkout() {
         alert(order.message || "Failed to save order. Please try again.");
         return;
       }
+
+      await deductWalletIfUsed();
 
       clearCart();
       navigate("/order-confirmation", { state: { order } });
@@ -121,7 +159,6 @@ function Checkout() {
       });
 
       const razorpayOrder = await response.json();
-      console.log('Razorpay order response:', razorpayOrder);
 
       const options = {
         key: 'rzp_test_TMoOw1DIh7h8IR',
@@ -130,7 +167,7 @@ function Checkout() {
         name: 'DigiHub',
         description: 'Order Payment',
         order_id: razorpayOrder.id,
-        handler: async function (response) {
+        handler: async function () {
           await saveOrderAndRedirect('paid');
         },
         prefill: {
@@ -158,7 +195,14 @@ function Checkout() {
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
 
-    if (paymentMethod === "COD") {
+    if (finalTotal === 0) {
+      // Fully paid via wallet
+      await saveOrderAndRedirect('paid');
+    } else if (paymentMethod === "COD") {
+      if (codBlocked) {
+        alert("COD is not available for one or more items in your cart.");
+        return;
+      }
       await saveOrderAndRedirect("cod");
     } else {
       handleRazorpayPayment();
@@ -235,25 +279,44 @@ function Checkout() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Payment Method</h2>
-            <div className="space-y-2">
-              {['UPI', 'Card', 'NetBanking', 'COD'].map((method) => (
-                <label key={method} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value={method}
-                    checked={paymentMethod === method}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                  />
-                  <span className="text-gray-700">
-                    {method === 'COD' ? 'Cash on Delivery' : method}
-                  </span>
-                </label>
-              ))}
+          {finalTotal > 0 && (
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-bold text-gray-800 mb-4">Payment Method</h2>
+
+              {codBlocked && (
+                <p className="text-sm text-red-600 mb-3">
+                  Cash on Delivery is not available for one or more items in your cart.
+                </p>
+              )}
+
+              <div className="space-y-2">
+                {['UPI', 'Card', 'NetBanking', 'COD'].map((method) => {
+                  const isCodDisabled = method === 'COD' && codBlocked;
+                  return (
+                    <label
+                      key={method}
+                      className={`flex items-center gap-2 ${
+                        isCodDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value={method}
+                        checked={paymentMethod === method}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        disabled={isCodDisabled}
+                      />
+                      <span className="text-gray-700">
+                        {method === 'COD' ? 'Cash on Delivery' : method}
+                        {isCodDisabled && ' (Not available for this order)'}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="bg-white rounded-lg shadow p-6 h-fit">
@@ -304,11 +367,37 @@ function Checkout() {
             )}
           </div>
 
+          {walletBalance > 0 && (
+            <div className="mt-4 border rounded-md p-3 bg-blue-50">
+              <label className="flex items-center justify-between cursor-pointer">
+                <span className="text-sm text-gray-700">
+                  Use Wallet Balance (₹{walletBalance} available)
+                </span>
+                <input
+                  type="checkbox"
+                  checked={useWallet}
+                  onChange={(e) => setUseWallet(e.target.checked)}
+                />
+              </label>
+              {useWallet && (
+                <p className="text-xs text-green-700 mt-1">
+                  ₹{walletUsedAmount} will be used from your wallet
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="border-t pt-2 mt-2">
             <div className="flex justify-between text-sm text-gray-600">
               <span>Discount</span>
               <span>-₹{discount}</span>
             </div>
+            {useWallet && walletUsedAmount > 0 && (
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Wallet Used</span>
+                <span>-₹{walletUsedAmount}</span>
+              </div>
+            )}
             <div className="flex justify-between font-bold text-gray-900 text-lg mt-1">
               <span>Total</span>
               <span>₹{finalTotal}</span>
@@ -320,7 +409,7 @@ function Checkout() {
             disabled={loading}
             className="w-full mt-4 bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition font-medium disabled:opacity-50"
           >
-            {loading ? 'Processing...' : 'Place Order'}
+            {loading ? 'Processing...' : finalTotal === 0 ? 'Place Order (Paid by Wallet)' : 'Place Order'}
           </button>
         </div>
       </form>
