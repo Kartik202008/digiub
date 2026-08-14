@@ -45,6 +45,7 @@ function ManageProducts() {
                 <th className="p-3 text-left">Category</th>
                 <th className="p-3 text-left">Price</th>
                 <th className="p-3 text-left">Stock</th>
+                <th className="p-3 text-left">COD</th>
                 <th className="p-3 text-left">Actions</th>
               </tr>
             </thead>
@@ -56,6 +57,13 @@ function ManageProducts() {
                   <td className="p-3">{product.category}</td>
                   <td className="p-3">₹{product.price}</td>
                   <td className="p-3">{product.stock}</td>
+                  <td className="p-3">
+                    {product.codAvailable !== false ? (
+                      <span className="text-green-600 font-medium">Available</span>
+                    ) : (
+                      <span className="text-red-600 font-medium">Not Available</span>
+                    )}
+                  </td>
                   <td className="p-3 flex gap-2">
                     <Link
                       to={`/admin/edit-product/${product._id}`}

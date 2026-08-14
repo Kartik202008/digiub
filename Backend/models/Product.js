@@ -99,6 +99,10 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    codAvailable: {
+  type: Boolean,
+  default: true,
+},
   },
   { timestamps: true }
 );

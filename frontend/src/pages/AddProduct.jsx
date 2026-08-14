@@ -9,10 +9,12 @@ function AddProduct() {
     image: "",
     description: "",
     stock: "",
+    codAvailable: true,
   });
 
   const handleChange = (e) => {
-    setProduct({ ...product, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setProduct({ ...product, [name]: type === "checkbox" ? checked : value });
   };
 
   const handleSubmit = async (e) => {
@@ -21,7 +23,6 @@ function AddProduct() {
     const price = Number(product.price);
     const originalPrice = Number(product.originalPrice);
 
-    // Calculate discount % automatically
     let discount = 0;
     if (originalPrice > price && originalPrice > 0) {
       discount = Math.round(((originalPrice - price) / originalPrice) * 100);
@@ -36,6 +37,7 @@ function AddProduct() {
       discount: discount,
       stock: Number(product.stock),
       images: [product.image.trim()],
+      codAvailable: product.codAvailable,
     };
 
     try {
@@ -62,6 +64,7 @@ function AddProduct() {
           image: "",
           description: "",
           stock: "",
+          codAvailable: true,
         });
       } else {
         console.log("FULL ERROR DATA:", data);
@@ -84,27 +87,37 @@ function AddProduct() {
           <input name="price" placeholder="Selling Price" value={product.price} onChange={handleChange} className="w-full border p-2 rounded" />
 
           <select
-  name="category"
-  value={product.category}
-  onChange={handleChange}
-  className="w-full border p-2 rounded"
-  required
->
-  <option value="">Select Category</option>
-  <option value="Mobile Accessories">Mobile Accessories</option>
-  <option value="Intel Processors">Intel Processors</option>
-  <option value="Pendrives">Pendrives</option>
-  <option value="Laptop Accessories">Laptop Accessories</option>
-  <option value="Headphones/Earphones">Headphones/Earphones</option>
-  <option value="Smartwatches">Smartwatches</option>
-  <option value="Chargers & Cables">Chargers & Cables</option>
-  <option value="Speakers">Speakers</option>
-  <option value="Power Banks">Power Banks</option>
-</select>
+            name="category"
+            value={product.category}
+            onChange={handleChange}
+            className="w-full border p-2 rounded"
+            required
+          >
+            <option value="">Select Category</option>
+            <option value="Mobile Accessories">Mobile Accessories</option>
+            <option value="Intel Processors">Intel Processors</option>
+            <option value="Pendrives">Pendrives</option>
+            <option value="Laptop Accessories">Laptop Accessories</option>
+            <option value="Headphones/Earphones">Headphones/Earphones</option>
+            <option value="Smartwatches">Smartwatches</option>
+            <option value="Chargers & Cables">Chargers & Cables</option>
+            <option value="Speakers">Speakers</option>
+            <option value="Power Banks">Power Banks</option>
+          </select>
 
           <input name="image" placeholder="Image URL" value={product.image} onChange={handleChange} className="w-full border p-2 rounded" />
           <textarea name="description" placeholder="Description" value={product.description} onChange={handleChange} className="w-full border p-2 rounded" />
           <input name="stock" placeholder="Stock" value={product.stock} onChange={handleChange} className="w-full border p-2 rounded" />
+
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              name="codAvailable"
+              checked={product.codAvailable}
+              onChange={handleChange}
+            />
+            <span className="text-gray-700">Cash on Delivery Available</span>
+          </label>
 
           <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
             Add Product
