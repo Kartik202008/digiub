@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { API_BASE_URL } from '../api/config';
 
 function ResetPassword() {
   const { token } = useParams();
@@ -31,7 +32,7 @@ function ResetPassword() {
 
     try {
       const res = await fetch(
-        `https://digihub-backend-o00g.onrender.com/api/auth/reset-password/${token}`,
+        `${API_BASE_URL}/api/auth/reset-password/${token}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

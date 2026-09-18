@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 
 function Cart() {
   const { cartItems, removeFromCart, updateQuantity, cartTotal } = useCart();
+  const { user } = useAuth();
+  const isEligible = user && !user.voucherUsed && (!user.orderCount || user.orderCount === 0);
 
   if (cartItems.length === 0) {
     return (
@@ -16,6 +19,21 @@ function Cart() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Your Cart</h1>
+
+      {isEligible && (
+        <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-4 rounded-lg flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🎁</span>
+            <div>
+              <p className="font-semibold text-blue-900">First-Time Welcome Discount Available!</p>
+              <p className="text-sm text-blue-700">Code <span className="font-bold">DIGI500</span> will automatically save you ₹500 at checkout.</p>
+            </div>
+          </div>
+          <Link to="/checkout" className="text-sm font-semibold text-blue-600 hover:text-blue-800 underline whitespace-nowrap">
+            Go to Checkout →
+          </Link>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         

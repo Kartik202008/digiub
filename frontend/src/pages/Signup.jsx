@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../api/config';
 
 function Signup() {
   const [name, setName] = useState('');
@@ -8,7 +10,14 @@ function Signup() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+
+  const redirectPath =
+    location.state?.from ||
+    new URLSearchParams(location.search).get('redirect') ||
+    '/';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,7 +25,7 @@ function Signup() {
     setLoading(true);
 
     try {
-      const response = await fetch('https://digihub-backend-o00g.onrender.com/api/auth/signup', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
@@ -30,12 +39,11 @@ function Signup() {
         return;
       }
 
-      // Save token and user info
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // Save user state in AuthContext & localStorage
+      login(data.user, data.token);
 
       alert(data.message);
-      navigate('/');
+      navigate(redirectPath, { replace: true });
     } catch (err) {
       setError('Something went wrong. Please try again.');
       setLoading(false);
@@ -50,7 +58,7 @@ function Signup() {
         </h2>
         <p className="text-center text-sm text-green-600 font-medium mb-6">
           Get ₹500 welcome voucher on signup!
-          Using "DIGIHUB500" at checkout.
+          Use code "DIGI500" at checkout.
         </p>
 
         {error && (
@@ -121,7 +129,7 @@ function Signup() {
 
         <p className="text-center text-sm text-gray-600 mt-4">
           Already have an account?{' '}
-          <Link to="/login" className="text-blue-600 font-medium cursor-pointer">
+          <Link to="/login" state={location.state} className="text-blue-600 font-medium cursor-pointer">
             Login
           </Link>
         </p>

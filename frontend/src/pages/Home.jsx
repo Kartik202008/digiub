@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
+import { getProducts } from "../api/products";
 
 const categories = [
   "Mobile Accessories",
@@ -16,14 +17,27 @@ const categories = [
 
 function Home() {
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
 
+  const loadProducts = async (force = false) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getProducts({ force });
+      setProducts(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Error fetching products:", err);
+      setError("Unable to load products right now. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetch("https://digihub-backend-o00g.onrender.com/api/products")
-      .then((res) => res.json())
-      .then((data) => setProducts(data))
-      .catch((err) => console.error("Error fetching products:", err));
+    loadProducts();
   }, []);
 
   const filteredProducts = useMemo(() => {
@@ -32,13 +46,13 @@ function Home() {
 
     return products.filter(
       (product) =>
-        product.name.toLowerCase().includes(query) ||
-        product.category.toLowerCase().includes(query) ||
-        product.description.toLowerCase().includes(query)
+        product.name?.toLowerCase().includes(query) ||
+        product.category?.toLowerCase().includes(query) ||
+        product.description?.toLowerCase().includes(query)
     );
   }, [products, search]);
 
-  const featuredProducts = filteredProducts.slice(0, 4);
+  const featuredProducts = filteredProducts.slice(0, 8);
 
   return (
     <div className="bg-gray-100 min-h-screen">
@@ -95,7 +109,32 @@ function Home() {
           <h2 className="text-xl font-bold text-gray-800">Featured Products</h2>
         </div>
 
-        {featuredProducts.length === 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((n) => (
+              <div
+                key={n}
+                className="bg-white rounded-lg shadow p-4 animate-pulse flex flex-col justify-between"
+              >
+                <div className="w-full h-48 bg-gray-200 rounded mb-3"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2 mb-3"></div>
+                <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+                <div className="h-10 bg-gray-200 rounded w-full"></div>
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <p className="text-red-700 font-medium mb-3">{error}</p>
+            <button
+              onClick={() => loadProducts(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition text-sm font-medium"
+            >
+              Retry
+            </button>
+          </div>
+        ) : featuredProducts.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-8 text-center text-gray-600">
             No products found for "{search}"
           </div>

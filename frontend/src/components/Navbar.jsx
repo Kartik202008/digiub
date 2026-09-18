@@ -1,26 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 
 function Navbar() {
-  const [user, setUser] = useState(null);
+  const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
+  const displayName =
+    user?.name && typeof user.name === 'string' && user.name.trim()
+      ? user.name.trim().split(' ')[0]
+      : user?.email
+      ? user.email.split('@')[0]
+      : 'User';
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
+    logout();
     setMenuOpen(false);
     navigate('/');
   };
@@ -50,7 +49,7 @@ function Navbar() {
           {user ? (
             <>
               <span className="text-gray-700 font-medium">
-                Hi, {user.name.split(' ')[0]}
+                Hi, {displayName}
               </span>
               <Link to="/my-orders" className="text-gray-700 hover:text-blue-600 font-medium">
                 My Orders
@@ -131,7 +130,7 @@ function Navbar() {
           {user ? (
             <div className="flex flex-col gap-3">
               <span className="text-gray-700 font-medium">
-                Hi, {user.name.split(' ')[0]}
+                Hi, {displayName}
               </span>
               <Link to="/my-orders" onClick={closeMenu} className="text-gray-700 hover:text-blue-600 font-medium">
                 My Orders

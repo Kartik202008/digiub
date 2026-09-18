@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../api/config';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -7,7 +9,14 @@ function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+
+  const redirectPath =
+    location.state?.from ||
+    new URLSearchParams(location.search).get('redirect') ||
+    '/';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -15,7 +24,7 @@ function Login() {
     setLoading(true);
 
     try {
-      const response = await fetch('https://digihub-backend-o00g.onrender.com/api/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -29,10 +38,9 @@ function Login() {
         return;
       }
 
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      login(data.user, data.token);
 
-      navigate('/');
+      navigate(redirectPath, { replace: true });
     } catch (err) {
       setError('Something went wrong. Please try again.');
       setLoading(false);
@@ -104,7 +112,7 @@ function Login() {
 
         <p className="text-center text-sm text-gray-600 mt-4">
           Don't have an account?{' '}
-          <Link to="/signup" className="text-blue-600 font-medium cursor-pointer">
+          <Link to="/signup" state={location.state} className="text-blue-600 font-medium cursor-pointer">
             Sign up
           </Link>
         </p>

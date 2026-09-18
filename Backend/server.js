@@ -9,6 +9,7 @@ const couponRoutes = require('./routes/couponRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const walletRoutes = require('./routes/walletRoutes');
+const cartRoutes = require('./routes/cartRoutes');
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use('/api/coupon', couponRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/wallet', walletRoutes);
+app.use('/api/cart', cartRoutes);
 
 // Test route
 app.get('/', (req, res) => {

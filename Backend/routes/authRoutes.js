@@ -43,6 +43,7 @@ const password = req.body.password;
         name: newUser.name,
         email: newUser.email,
         voucherUsed: newUser.voucherUsed,
+        orderCount: newUser.orderCount || 0,
       },
     });
   } catch (error) {
@@ -79,6 +80,7 @@ router.post('/login', async (req, res) => {
         email: user.email,
         isAdmin: user.isAdmin,
         voucherUsed: user.voucherUsed,
+        orderCount: user.orderCount || 0,
       },
     });
   } catch (error) {

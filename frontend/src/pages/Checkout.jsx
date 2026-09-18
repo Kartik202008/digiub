@@ -1,14 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { API_BASE_URL } from '../api/config';
 
 function Checkout() {
   const { cartItems, cartTotal, clearCart } = useCart();
+  const { user, token, updateUser } = useAuth();
   const navigate = useNavigate();
 
   const [couponCode, setCouponCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [couponMessage, setCouponMessage] = useState("");
+  const [couponError, setCouponError] = useState("");
+  const [isWelcomeCouponApplied, setIsWelcomeCouponApplied] = useState(false);
+  const [isEligibleForWelcome, setIsEligibleForWelcome] = useState(false);
 
   const [walletBalance, setWalletBalance] = useState(0);
   const [useWallet, setUseWallet] = useState(false);
@@ -21,66 +27,197 @@ function Checkout() {
     state: '',
     pincode: '',
   });
-  const [paymentMethod, setPaymentMethod] = useState('COD');
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [paymentMethod, setPaymentMethod] = useState('UPI');
   const [loading, setLoading] = useState(false);
 
-  const user = JSON.parse(localStorage.getItem('user'));
   const userId = user?._id || user?.id;
+
+  const validateField = (name, value) => {
+    const trimmed = typeof value === 'string' ? value.trim() : '';
+    switch (name) {
+      case 'fullName':
+        if (!trimmed) return 'Full Name is required.';
+        if (trimmed.length < 2) return 'Full Name must be at least 2 characters.';
+        return '';
+      case 'phone':
+        if (!trimmed) return 'Phone number is required.';
+        if (!/^[6-9]\d{9}$/.test(trimmed)) {
+          return 'Enter a valid 10-digit phone number.';
+        }
+        return '';
+      case 'street':
+        if (!trimmed) return 'Street address is required.';
+        if (trimmed.length < 3) return 'Street address must be at least 3 characters.';
+        return '';
+      case 'city':
+        if (!trimmed) return 'City is required.';
+        if (trimmed.length < 2) return 'City must be at least 2 characters.';
+        return '';
+      case 'state':
+        if (!trimmed) return 'State is required.';
+        if (trimmed.length < 2) return 'State must be at least 2 characters.';
+        return '';
+      case 'pincode':
+        if (!trimmed) return 'PIN code is required.';
+        if (!/^[1-9]\d{5}$/.test(trimmed)) {
+          return 'Enter a valid 6-digit PIN code.';
+        }
+        return '';
+      default:
+        return '';
+    }
+  };
+
+  const validateAll = (addressData) => {
+    const newErrors = {};
+    ['fullName', 'phone', 'street', 'city', 'state', 'pincode'].forEach((field) => {
+      const err = validateField(field, addressData[field]);
+      if (err) newErrors[field] = err;
+    });
+    return newErrors;
+  };
+
+  // Protect route if user is not authenticated
+  useEffect(() => {
+    if (!user) {
+      navigate('/login', { state: { from: '/checkout' }, replace: true });
+    }
+  }, [user, navigate]);
+
+  // Check first-time user eligibility for DIGI500 welcome coupon
+  useEffect(() => {
+    if (!user || !token) {
+      setIsEligibleForWelcome(false);
+      setIsWelcomeCouponApplied(false);
+      return;
+    }
+
+    const isEligibleLocal = !user.voucherUsed && (!user.orderCount || user.orderCount === 0);
+
+    if (isEligibleLocal) {
+      fetch(`${API_BASE_URL}/api/coupon/eligibility`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.eligible) {
+            setIsEligibleForWelcome(true);
+            setCouponCode("DIGI500");
+            setIsWelcomeCouponApplied(true);
+            setCouponMessage("🎉 Welcome Offer: ₹500 discount with DIGI500 automatically applied!");
+            setCouponError("");
+          } else {
+            setIsEligibleForWelcome(false);
+            setIsWelcomeCouponApplied(false);
+            setDiscount(0);
+            if (couponCode === "DIGI500") {
+              setCouponCode("");
+            }
+          }
+        })
+        .catch(() => {
+          setIsEligibleForWelcome(false);
+        });
+    } else {
+      setIsEligibleForWelcome(false);
+      setIsWelcomeCouponApplied(false);
+      setDiscount(0);
+      if (couponCode === "DIGI500") {
+        setCouponCode("");
+      }
+    }
+  }, [user, token]);
+
+  // Recalculate discount if cartTotal changes (e.g. cart subtotal < 500)
+  useEffect(() => {
+    if (isWelcomeCouponApplied || couponCode.trim().toUpperCase() === "DIGI500") {
+      if (cartTotal > 0) {
+        setDiscount(Math.min(cartTotal, 500));
+      } else {
+        setDiscount(0);
+      }
+    }
+  }, [cartTotal, isWelcomeCouponApplied, couponCode]);
 
   const afterCoupon = Math.max(0, cartTotal - discount);
   const walletUsedAmount = useWallet ? Math.min(walletBalance, afterCoupon) : 0;
   const finalTotal = Math.max(0, afterCoupon - walletUsedAmount);
 
-  const codBlocked = cartItems.some((item) => item.codAvailable === false);
-
   useEffect(() => {
     if (!userId) return;
-    fetch(`https://digihub-backend-o00g.onrender.com/api/wallet/${userId}`)
+    fetch(`${API_BASE_URL}/api/wallet/${userId}`)
       .then((res) => res.json())
       .then((data) => setWalletBalance(data.balance || 0))
       .catch((err) => console.error(err));
   }, [userId]);
 
-  useEffect(() => {
-    if (codBlocked && paymentMethod === 'COD') {
-      setPaymentMethod('UPI');
-    }
-  }, [codBlocked, paymentMethod]);
-
   const handleChange = (e) => {
-    setAddress({ ...address, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setAddress((prev) => ({ ...prev, [name]: value }));
+    if (touched[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: validateField(name, value),
+      }));
+    }
   };
 
-  const applyCoupon = async () => {
-    try {
-      const token = localStorage.getItem("token");
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    setTouched((prev) => ({ ...prev, [name]: true }));
+    setErrors((prev) => ({
+      ...prev,
+      [name]: validateField(name, value),
+    }));
+  };
 
-      const res = await fetch("https://digihub-backend-o00g.onrender.com/api/coupon/apply", {
+  const applyCoupon = async (codeOverride) => {
+    setCouponError("");
+    setCouponMessage("");
+
+    const rawCode = typeof codeOverride === 'string' ? codeOverride : couponCode;
+    const codeToApply = rawCode.trim().toUpperCase();
+    if (!codeToApply) {
+      setCouponError("Please enter a coupon code");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/coupon/apply`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ code: couponCode }),
+        body: JSON.stringify({ code: codeToApply }),
       });
 
       const data = await res.json();
 
       if (data.success) {
-        setDiscount(data.discount);
-        setCouponMessage("Coupon applied successfully!");
+        const calculatedDiscount = Math.min(cartTotal, data.discount);
+        setDiscount(calculatedDiscount);
+        setCouponMessage(data.message || "Coupon applied successfully!");
+        setCouponError("");
+        if (codeToApply === "DIGI500" || codeToApply === "DIGIHUB500") {
+          setIsWelcomeCouponApplied(true);
+        }
       } else {
-        setCouponMessage(data.message);
+        setDiscount(0);
+        setIsWelcomeCouponApplied(false);
+        setCouponError(data.message || "Invalid coupon code");
       }
     } catch (err) {
-      setCouponMessage("Something went wrong");
+      setCouponError("Something went wrong applying coupon");
     }
   };
 
   const deductWalletIfUsed = async () => {
     if (walletUsedAmount > 0) {
       try {
-        await fetch("https://digihub-backend-o00g.onrender.com/api/wallet/deduct", {
+        await fetch(`${API_BASE_URL}/api/wallet/deduct`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId, amount: walletUsedAmount }),
@@ -93,7 +230,14 @@ function Checkout() {
 
   const saveOrderAndRedirect = async (paymentStatus) => {
     try {
-      const token = localStorage.getItem("token");
+      const trimmedAddress = {
+        fullName: address.fullName.trim(),
+        phone: address.phone.trim(),
+        street: address.street.trim(),
+        city: address.city.trim(),
+        state: address.state.trim(),
+        pincode: address.pincode.trim(),
+      };
 
       const orderData = {
         user: userId,
@@ -104,7 +248,7 @@ function Checkout() {
           price: item.price,
           image: item.image || (item.images && item.images.length > 0 ? item.images[0] : ""),
         })),
-        shippingAddress: address,
+        shippingAddress: trimmedAddress,
         paymentMethod: finalTotal === 0 ? 'Wallet' : paymentMethod,
         voucherApplied: discount > 0,
         itemsPrice: cartTotal,
@@ -114,17 +258,14 @@ function Checkout() {
         orderStatus: "Placed",
       };
 
-      const res = await fetch(
-        "https://digihub-backend-o00g.onrender.com/api/orders",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(orderData),
-        }
-      );
+      const res = await fetch(`${API_BASE_URL}/api/orders`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(orderData),
+      });
 
       const order = await res.json();
 
@@ -136,6 +277,22 @@ function Checkout() {
 
       await deductWalletIfUsed();
 
+      // Update user auth state so welcome coupon cannot be reused
+      if (discount > 0 && isWelcomeCouponApplied) {
+        updateUser({ voucherUsed: true, orderCount: (user.orderCount || 0) + 1 });
+      } else {
+        updateUser({ orderCount: (user.orderCount || 0) + 1 });
+      }
+
+      // Backend cart sync cleanup
+      if (token) {
+        fetch(`${API_BASE_URL}/api/cart`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => {});
+      }
+
+      // Clear frontend cart immediately upon confirmed order
       clearCart();
       navigate("/order-confirmation", { state: { order } });
     } catch (error) {
@@ -147,9 +304,7 @@ function Checkout() {
   const handleRazorpayPayment = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-
-      const response = await fetch('https://digihub-backend-o00g.onrender.com/api/payment/create-order', {
+      const response = await fetch(`${API_BASE_URL}/api/payment/create-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -171,8 +326,8 @@ function Checkout() {
           await saveOrderAndRedirect('paid');
         },
         prefill: {
-          name: address.fullName,
-          contact: address.phone,
+          name: address.fullName.trim(),
+          contact: address.phone.trim(),
         },
         theme: {
           color: '#2563eb',
@@ -195,15 +350,33 @@ function Checkout() {
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
 
+    // Validate all shipping address fields before placing order
+    const fieldErrors = validateAll(address);
+    setTouched({
+      fullName: true,
+      phone: true,
+      street: true,
+      city: true,
+      state: true,
+      pincode: true,
+    });
+    setErrors(fieldErrors);
+
+    const errorFields = Object.keys(fieldErrors);
+    if (errorFields.length > 0) {
+      const firstInvalidField = document.querySelector(`[name="${errorFields[0]}"]`);
+      if (firstInvalidField) {
+        firstInvalidField.focus();
+        firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
     if (finalTotal === 0) {
       // Fully paid via wallet
       await saveOrderAndRedirect('paid');
-    } else if (paymentMethod === "COD") {
-      if (codBlocked) {
-        alert("COD is not available for one or more items in your cart.");
-        return;
-      }
-      await saveOrderAndRedirect("cod");
+    } else if (paymentMethod === 'COD') {
+      await saveOrderAndRedirect('pending');
     } else {
       handleRazorpayPayment();
     }
@@ -221,61 +394,160 @@ function Checkout() {
     <div className="max-w-7xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Checkout</h1>
 
-      <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <form onSubmit={handlePlaceOrder} noValidate className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         <div className="lg:col-span-2 space-y-6">
           
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-bold text-gray-800 mb-4">Delivery Address</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                name="fullName"
-                value={address.fullName}
-                onChange={handleChange}
-                placeholder="Full Name"
-                className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-              <input
-                name="phone"
-                value={address.phone}
-                onChange={handleChange}
-                placeholder="Phone Number"
-                className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-              <input
-                name="street"
-                value={address.street}
-                onChange={handleChange}
-                placeholder="Street Address"
-                className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 md:col-span-2"
-                required
-              />
-              <input
-                name="city"
-                value={address.city}
-                onChange={handleChange}
-                placeholder="City"
-                className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-              <input
-                name="state"
-                value={address.state}
-                onChange={handleChange}
-                placeholder="State"
-                className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-              <input
-                name="pincode"
-                value={address.pincode}
-                onChange={handleChange}
-                placeholder="Pincode"
-                className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
+              {/* Full Name */}
+              <div>
+                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="fullName"
+                  name="fullName"
+                  type="text"
+                  value={address.fullName}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  placeholder="Enter full name"
+                  className={`w-full border rounded-md px-4 py-2 focus:outline-none transition ${
+                    touched.fullName && errors.fullName
+                      ? 'border-red-500 bg-red-50/20 focus:ring-2 focus:ring-red-400'
+                      : 'border-gray-300 focus:ring-2 focus:ring-blue-500'
+                  }`}
+                />
+                {touched.fullName && errors.fullName && (
+                  <p className="text-red-600 text-xs mt-1 font-medium">{errors.fullName}</p>
+                )}
+              </div>
+
+              {/* Phone Number */}
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={10}
+                  value={address.phone}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  placeholder="10-digit mobile number"
+                  className={`w-full border rounded-md px-4 py-2 focus:outline-none transition ${
+                    touched.phone && errors.phone
+                      ? 'border-red-500 bg-red-50/20 focus:ring-2 focus:ring-red-400'
+                      : 'border-gray-300 focus:ring-2 focus:ring-blue-500'
+                  }`}
+                />
+                {touched.phone && errors.phone && (
+                  <p className="text-red-600 text-xs mt-1 font-medium">{errors.phone}</p>
+                )}
+              </div>
+
+              {/* Street Address */}
+              <div className="md:col-span-2">
+                <label htmlFor="street" className="block text-sm font-medium text-gray-700 mb-1">
+                  Street Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="street"
+                  name="street"
+                  type="text"
+                  value={address.street}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  placeholder="House / Flat / Street address"
+                  className={`w-full border rounded-md px-4 py-2 focus:outline-none transition ${
+                    touched.street && errors.street
+                      ? 'border-red-500 bg-red-50/20 focus:ring-2 focus:ring-red-400'
+                      : 'border-gray-300 focus:ring-2 focus:ring-blue-500'
+                  }`}
+                />
+                {touched.street && errors.street && (
+                  <p className="text-red-600 text-xs mt-1 font-medium">{errors.street}</p>
+                )}
+              </div>
+
+              {/* City */}
+              <div>
+                <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
+                  City <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="city"
+                  name="city"
+                  type="text"
+                  value={address.city}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  placeholder="City"
+                  className={`w-full border rounded-md px-4 py-2 focus:outline-none transition ${
+                    touched.city && errors.city
+                      ? 'border-red-500 bg-red-50/20 focus:ring-2 focus:ring-red-400'
+                      : 'border-gray-300 focus:ring-2 focus:ring-blue-500'
+                  }`}
+                />
+                {touched.city && errors.city && (
+                  <p className="text-red-600 text-xs mt-1 font-medium">{errors.city}</p>
+                )}
+              </div>
+
+              {/* State */}
+              <div>
+                <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
+                  State <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="state"
+                  name="state"
+                  type="text"
+                  value={address.state}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  placeholder="State"
+                  className={`w-full border rounded-md px-4 py-2 focus:outline-none transition ${
+                    touched.state && errors.state
+                      ? 'border-red-500 bg-red-50/20 focus:ring-2 focus:ring-red-400'
+                      : 'border-gray-300 focus:ring-2 focus:ring-blue-500'
+                  }`}
+                />
+                {touched.state && errors.state && (
+                  <p className="text-red-600 text-xs mt-1 font-medium">{errors.state}</p>
+                )}
+              </div>
+
+              {/* PIN Code */}
+              <div>
+                <label htmlFor="pincode" className="block text-sm font-medium text-gray-700 mb-1">
+                  PIN Code <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="pincode"
+                  name="pincode"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={address.pincode}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  placeholder="6-digit PIN code"
+                  className={`w-full border rounded-md px-4 py-2 focus:outline-none transition ${
+                    touched.pincode && errors.pincode
+                      ? 'border-red-500 bg-red-50/20 focus:ring-2 focus:ring-red-400'
+                      : 'border-gray-300 focus:ring-2 focus:ring-blue-500'
+                  }`}
+                />
+                {touched.pincode && errors.pincode && (
+                  <p className="text-red-600 text-xs mt-1 font-medium">{errors.pincode}</p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -283,21 +555,12 @@ function Checkout() {
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-lg font-bold text-gray-800 mb-4">Payment Method</h2>
 
-              {codBlocked && (
-                <p className="text-sm text-red-600 mb-3">
-                  Cash on Delivery is not available for one or more items in your cart.
-                </p>
-              )}
-
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {['UPI', 'Card', 'NetBanking', 'COD'].map((method) => {
-                  const isCodDisabled = method === 'COD' && codBlocked;
                   return (
                     <label
                       key={method}
-                      className={`flex items-center gap-2 ${
-                        isCodDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-                      }`}
+                      className="flex items-center gap-2 cursor-pointer"
                     >
                       <input
                         type="radio"
@@ -305,11 +568,13 @@ function Checkout() {
                         value={method}
                         checked={paymentMethod === method}
                         onChange={(e) => setPaymentMethod(e.target.value)}
-                        disabled={isCodDisabled}
                       />
-                      <span className="text-gray-700">
-                        {method === 'COD' ? 'Cash on Delivery' : method}
-                        {isCodDisabled && ' (Not available for this order)'}
+                      <span className="text-gray-700 font-medium">
+                        {method === 'Card'
+                          ? 'Credit / Debit Card'
+                          : method === 'COD'
+                          ? 'Cash on Delivery'
+                          : method}
                       </span>
                     </label>
                   );
@@ -328,41 +593,76 @@ function Checkout() {
             </div>
           ))}
 
-          <div style={{ marginTop: "15px" }}>
-            <input
-              type="text"
-              placeholder="Enter coupon code"
-              value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px",
-                marginBottom: "10px",
-                borderRadius: "6px",
-                border: "1px solid #ccc",
-              }}
-            />
+          <div className="mt-4 border-t pt-4">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Have a Coupon?
+            </label>
 
-            <button
-              type="button"
-              onClick={applyCoupon}
-              style={{
-                width: "100%",
-                padding: "10px",
-                background: "#2874f0",
-                color: "white",
-                border: "none",
-                borderRadius: "6px",
-                cursor: "pointer",
-                marginBottom: "10px",
-              }}
-            >
-              Apply Coupon
-            </button>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Enter coupon code"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm uppercase focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+
+              <button
+                type="button"
+                onClick={applyCoupon}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition"
+              >
+                Apply
+              </button>
+            </div>
+
+            {/* Available Welcome Coupon Section */}
+            {isEligibleForWelcome && (
+              <div className="mt-3 p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg text-left">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1">
+                    <span>🎁</span> Welcome Coupon
+                  </span>
+                  {isWelcomeCouponApplied ? (
+                    <span className="inline-flex items-center text-[11px] font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
+                      ✓ Applied
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCouponCode("DIGI500");
+                        applyCoupon("DIGI500");
+                      }}
+                      className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      Apply
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🎁</span>
+                    <span className="text-sm font-bold text-gray-900 tracking-wide font-mono bg-white px-2 py-0.5 border border-dashed border-amber-300 rounded">
+                      DIGI500
+                    </span>
+                  </div>
+                  <span className="text-xs font-semibold text-amber-900">
+                    ₹500 OFF on your first order
+                  </span>
+                </div>
+              </div>
+            )}
 
             {couponMessage && (
-              <p style={{ color: "green", fontSize: "14px" }}>
-                {couponMessage}
+              <p className="text-green-600 text-xs mt-2 font-medium">
+                ✓ {couponMessage}
+              </p>
+            )}
+            {couponError && (
+              <p className="text-red-600 text-xs mt-2 font-medium">
+                ✗ {couponError}
               </p>
             )}
           </div>

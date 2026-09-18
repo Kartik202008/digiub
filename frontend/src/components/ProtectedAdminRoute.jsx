@@ -1,14 +1,15 @@
 import { Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 function ProtectedAdminRoute({ children }) {
-const user = JSON.parse(localStorage.getItem('user'));
+  const { user } = useAuth();
 
-// test@123 ko admin maan rahe hain
-if (!user || user.email !== 'kg0493793@gmail.com') {
-return <Navigate to="/" replace />;
-}
+  // test@123 ko admin maan rahe hain
+  if (!user || user.email !== 'kg0493793@gmail.com') {
+    return <Navigate to="/" replace />;
+  }
 
-return children;
+  return children;
 }
 
 export default ProtectedAdminRoute;

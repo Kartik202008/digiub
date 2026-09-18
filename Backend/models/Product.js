@@ -100,11 +100,15 @@ const productSchema = new mongoose.Schema(
       default: false,
     },
     codAvailable: {
-  type: Boolean,
-  default: true,
-},
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );
+
+productSchema.index({ category: 1 });
+productSchema.index({ featured: 1 });
+productSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Product', productSchema);

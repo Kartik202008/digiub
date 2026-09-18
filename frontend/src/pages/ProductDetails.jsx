@@ -1,40 +1,128 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
+import { getProductById, getProducts } from "../api/products";
 
 function ProductDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { addToCart } = useCart();
   const { addToWishlist, isInWishlist } = useWishlist();
 
   const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [quantity, setQuantity] = useState(1);
+  const [successMsg, setSuccessMsg] = useState("");
 
   useEffect(() => {
-    fetch(`https://digihub-backend-o00g.onrender.com/api/products/${id}`)
-      .then((res) => res.json())
+    let isMounted = true;
+    setLoading(true);
+    setError(null);
+
+    getProductById(id)
       .then((data) => {
+        if (!isMounted) return;
         setProduct(data);
+        setLoading(false);
 
-        fetch("https://digihub-backend-o00g.onrender.com/api/products")
-          .then((res) => res.json())
-          .then((allProducts) => {
-            const related = allProducts
-              .filter(
-                (p) => p.category === data.category && p._id !== data._id
-              )
-              .slice(0, 4);
-
-            setRelatedProducts(related);
-          });
+        // Fetch category-specific related products in parallel/fast
+        if (data.category) {
+          getProducts({ category: data.category })
+            .then((catProducts) => {
+              if (!isMounted) return;
+              const related = catProducts
+                .filter((p) => p._id !== data._id)
+                .slice(0, 4);
+              setRelatedProducts(related);
+            })
+            .catch(() => {});
+        }
       })
-      .catch((err) => console.error(err));
+      .catch((err) => {
+        if (!isMounted) return;
+        console.error("Error fetching product details:", err);
+        setError("Product could not be loaded. Please try again.");
+        setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
-  if (!product) {
-    return <div className="p-6">Loading...</div>;
+  const handleAddToCart = () => {
+    if (!product) return;
+    addToCart(
+      {
+        id: product._id,
+        name: product.name,
+        price: Number(product.price),
+        image: product.images?.[0] || "",
+        codAvailable: product.codAvailable !== false,
+      },
+      quantity
+    );
+    setSuccessMsg(`Added ${quantity} item${quantity > 1 ? "s" : ""} to cart!`);
+    setTimeout(() => setSuccessMsg(""), 3000);
+  };
+
+  const handleBuyNow = () => {
+    if (!product) return;
+    if (product.stock <= 0) {
+      alert("This product is currently out of stock.");
+      return;
+    }
+
+    addToCart(
+      {
+        id: product._id,
+        name: product.name,
+        price: Number(product.price),
+        image: product.images?.[0] || "",
+        codAvailable: product.codAvailable !== false,
+      },
+      quantity
+    );
+
+    if (user) {
+      navigate("/checkout");
+    } else {
+      navigate("/login", { state: { from: "/checkout" } });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="h-6 w-32 bg-gray-200 rounded mb-6 animate-pulse"></div>
+        <div className="grid md:grid-cols-2 gap-10 bg-white p-6 rounded-lg shadow animate-pulse">
+          <div className="w-full h-[450px] bg-gray-200 rounded-lg"></div>
+          <div className="space-y-4">
+            <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+            <div className="h-10 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-20 bg-gray-200 rounded w-full"></div>
+            <div className="h-12 bg-gray-200 rounded w-full"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="max-w-7xl mx-auto p-6 text-center">
+        <p className="text-red-600 mb-4">{error || "Product not found."}</p>
+        <Link to="/" className="text-blue-600 font-medium">
+          ← Back to Home
+        </Link>
+      </div>
+    );
   }
 
   const image =
@@ -120,30 +208,37 @@ function ProductDetails() {
             </button>
           </div>
 
-         <div className="flex gap-4 items-center">
-  <button
-    onClick={() =>
-      addToCart({
-        ...product,
-        quantity,
-      })
-    }
-    className="flex-1 bg-blue-600 text-white py-3 rounded-lg"
-  >
-    Add to Cart
-  </button>
+          {successMsg && (
+            <p className="text-green-600 font-medium text-sm mb-3">
+              ✓ {successMsg}
+            </p>
+          )}
 
-  <button
-    onClick={() => addToWishlist(product)}
-    className="w-14 h-14 border rounded-lg flex items-center justify-center text-2xl hover:bg-red-50"
-  >
-    {isInWishlist(product._id) ? "❤️" : "🤍"}
-  </button>
+          <div className="flex gap-4 items-center">
+            <button
+              onClick={handleAddToCart}
+              disabled={product.stock <= 0}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition disabled:opacity-50"
+            >
+              Add to Cart
+            </button>
 
-  <button className="flex-1 bg-orange-500 text-white py-3 rounded-lg">
-    Buy Now
-  </button>
-</div>
+            <button
+              onClick={() => addToWishlist(product)}
+              className="w-14 h-14 border rounded-lg flex items-center justify-center text-2xl hover:bg-red-50 transition"
+              aria-label="Wishlist"
+            >
+              {isInWishlist(product._id) ? "❤️" : "🤍"}
+            </button>
+
+            <button
+              onClick={handleBuyNow}
+              disabled={product.stock <= 0}
+              className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-medium transition disabled:opacity-50"
+            >
+              Buy Now
+            </button>
+          </div>
         </div>
       </div>
 
@@ -160,19 +255,21 @@ function ProductDetails() {
                 key={p._id}
                 to={`/product/${p._id}`}
               >
-                <div className="bg-white rounded-lg shadow p-3">
+                <div className="bg-white rounded-lg shadow p-3 hover:shadow-md transition">
                   <img
                     src={
                       p.images?.[0] ||
                       "https://via.placeholder.com/300"
                     }
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-40 object-contain"
                     alt={p.name}
                   />
 
-                  <h3 className="font-medium">{p.name}</h3>
+                  <h3 className="font-medium mt-2 line-clamp-1">{p.name}</h3>
 
-                  <p className="text-blue-600 font-bold">
+                  <p className="text-blue-600 font-bold mt-1">
                     ₹{p.price}
                   </p>
                 </div>

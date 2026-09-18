@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../api/config';
 
 function MyOrders() {
 const [orders, setOrders] = useState([]);
 const [loading, setLoading] = useState(true);
+const { user } = useAuth();
 
 const fetchOrders = () => {
-const user = JSON.parse(localStorage.getItem('user'));
 const userId = user?._id || user?.id;
 
 if (!userId) {
@@ -14,7 +16,7 @@ if (!userId) {
   return;
 }
 
-fetch(`https://digihub-backend-o00g.onrender.com/api/orders/my-orders/${userId}`)
+fetch(`${API_BASE_URL}/api/orders/my-orders/${userId}`)
   .then((res) => res.json())
   .then((data) => {
     setOrders(Array.isArray(data) ? data : []);
@@ -29,12 +31,12 @@ fetch(`https://digihub-backend-o00g.onrender.com/api/orders/my-orders/${userId}`
 
 useEffect(() => {
 fetchOrders();
-}, []);
+}, [user]);
 
 const updateOrderStatus = async (orderId, status) => {
 try {
 const res = await fetch(
-`https://digihub-backend-o00g.onrender.com/api/orders/${orderId}/status`,
+`${API_BASE_URL}/api/orders/${orderId}/status`,
 {
 method: 'PUT',
 headers: {

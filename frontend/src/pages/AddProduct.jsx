@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { API_BASE_URL } from "../api/config";
+import { invalidateProductCache } from "../api/products";
 
 function AddProduct() {
   const [product, setProduct] = useState({
@@ -23,27 +25,31 @@ function AddProduct() {
     const price = Number(product.price);
     const originalPrice = Number(product.originalPrice);
 
-    let discount = 0;
-    if (originalPrice > price && originalPrice > 0) {
-      discount = Math.round(((originalPrice - price) / originalPrice) * 100);
+    if (originalPrice && price >= originalPrice) {
+      alert("Discounted price must be less than original price");
+      return;
     }
+
+    const discount = originalPrice
+      ? Math.round(((originalPrice - price) / originalPrice) * 100)
+      : 0;
 
     const productData = {
       name: product.name.trim(),
-      description: product.description.trim(),
-      category: product.category.trim(),
-      price: price,
-      originalPrice: originalPrice,
-      discount: discount,
-      stock: Number(product.stock),
+      price,
+      originalPrice: originalPrice || undefined,
+      discount,
+      category: product.category,
       images: [product.image.trim()],
+      description: product.description.trim(),
+      stock: Number(product.stock),
       codAvailable: product.codAvailable,
     };
 
     try {
       const token = localStorage.getItem("token");
 
-      const res = await fetch("https://digihub-backend-o00g.onrender.com/api/products", {
+      const res = await fetch(`${API_BASE_URL}/api/products`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -55,6 +61,7 @@ function AddProduct() {
       const data = await res.json();
 
       if (res.ok) {
+        invalidateProductCache();
         alert("Product added successfully!");
         setProduct({
           name: "",

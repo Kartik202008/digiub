@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { API_BASE_URL } from "../api/config";
+import { invalidateProductCache } from "../api/products";
 
 function ManageProducts() {
   const [products, setProducts] = useState([]);
 
   const fetchProducts = async () => {
-    const res = await fetch("https://digihub-backend-o00g.onrender.com/api/products");
+    const res = await fetch(`${API_BASE_URL}/api/products`);
     const data = await res.json();
     setProducts(data);
   };
@@ -17,10 +19,11 @@ function ManageProducts() {
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this product?")) return;
 
-    await fetch(`https://digihub-backend-o00g.onrender.com/api/products/${id}`, {
+    await fetch(`${API_BASE_URL}/api/products/${id}`, {
       method: "DELETE",
     });
 
+    invalidateProductCache();
     fetchProducts();
   };
 

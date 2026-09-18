@@ -38,6 +38,19 @@ resetPasswordExpires: {
     default: 0,
   },
 
+  cart: [
+    {
+      product: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Product',
+      },
+      quantity: {
+        type: Number,
+        default: 1,
+      },
+    },
+  ],
+
   // Wallet balance
   walletBalance: {
     type: Number,

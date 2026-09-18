@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../api/config';
 
 function TrackOrder() {
 const { id } = useParams();
 const [order, setOrder] = useState(null);
+const { user } = useAuth();
 
 useEffect(() => {
-const user = JSON.parse(localStorage.getItem('user'));
 const userId = user?._id || user?.id;
 
 if (!userId) return;
 
-fetch(`https://digihub-backend-o00g.onrender.com/api/orders/my-orders/${userId}`)
+fetch(`${API_BASE_URL}/api/orders/my-orders/${userId}`)
   .then((res) => res.json())
   .then((data) => {
     const found = Array.isArray(data)
@@ -21,7 +23,7 @@ fetch(`https://digihub-backend-o00g.onrender.com/api/orders/my-orders/${userId}`
   })
   .catch((err) => console.error(err));
 
-}, [id]);
+}, [id, user]);
 
 if (!order) {
 return ( <div className="p-6 text-center"> <p className="text-gray-600">Loading order tracking...</p> </div>

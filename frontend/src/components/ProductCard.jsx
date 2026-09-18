@@ -38,15 +38,23 @@ function ProductCard({ product }) {
 
       <Link to={`/product/${product._id}`}>
         {/* Product Image */}
-        <img
-          src={
-            product.images && product.images.length > 0
-              ? product.images[0]
-              : "https://via.placeholder.com/300x300?text=No+Image"
-          }
-          alt={product.name}
-          className="w-full h-48 object-contain rounded"
-        />
+        <div className="w-full h-48 flex items-center justify-center bg-gray-50 rounded overflow-hidden">
+          <img
+            src={
+              product.images && product.images.length > 0
+                ? product.images[0]
+                : "https://via.placeholder.com/300x300?text=No+Image"
+            }
+            alt={product.name}
+            loading="lazy"
+            decoding="async"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = "https://via.placeholder.com/300x300?text=No+Image";
+            }}
+            className="w-full h-48 object-contain rounded transition-transform duration-200 hover:scale-105"
+          />
+        </div>
 
         {/* Product Name */}
         <h3 className="font-semibold text-gray-800 mt-3 line-clamp-2">

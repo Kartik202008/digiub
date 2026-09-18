@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
+import { API_BASE_URL } from "../api/config";
 
 function ManageOrders() {
   const [orders, setOrders] = useState([]);
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch(
-        "https://digihub-backend-o00g.onrender.com/api/orders"
-      );
+      const res = await fetch(`${API_BASE_URL}/api/orders`);
       const data = await res.json();
       setOrders(data);
     } catch (err) {
@@ -22,7 +21,7 @@ function ManageOrders() {
   const updateStatus = async (id, status) => {
     try {
       await fetch(
-        `https://digihub-backend-o00g.onrender.com/api/orders/${id}/status`,
+        `${API_BASE_URL}/api/orders/${id}/status`,
         {
           method: "PUT",
           headers: {
@@ -41,7 +40,7 @@ function ManageOrders() {
   const refundToWallet = async (order) => {
     try {
       await fetch(
-        'https://digihub-backend-o00g.onrender.com/api/wallet/refund',
+        `${API_BASE_URL}/api/wallet/refund`,
         {
           method: 'POST',
           headers: {

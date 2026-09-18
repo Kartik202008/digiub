@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { WishlistProvider } from "./context/WishlistContext";
 
@@ -28,9 +29,10 @@ import ResetPassword from './pages/ResetPassword';
 
 function App() {
   return (
-    <CartProvider>
-      <WishlistProvider>
-        <BrowserRouter>
+    <AuthProvider>
+      <CartProvider>
+        <WishlistProvider>
+          <BrowserRouter>
           <Navbar />
 
           <Routes>
@@ -99,7 +101,8 @@ function App() {
         </BrowserRouter>
       </WishlistProvider>
     </CartProvider>
-  );
+  </AuthProvider>
+);
 }
 
 export default App;

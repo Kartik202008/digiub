@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { API_BASE_URL } from '../api/config';
 
 function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -14,7 +15,7 @@ function ForgotPassword() {
     setLoading(true);
 
     try {
-      const res = await fetch('https://digihub-backend-o00g.onrender.com/api/auth/forgot-password', {
+      const res = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

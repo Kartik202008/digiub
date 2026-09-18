@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../api/config';
 
 function MyWallet() {
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState([]);
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const user = JSON.parse(localStorage.getItem('user'));
+  const { user } = useAuth();
   const userId = user?._id || user?.id;
 
   const fetchWallet = async () => {
     const res = await fetch(
-      `https://digihub-backend-o00g.onrender.com/api/wallet/${userId}`
+      `${API_BASE_URL}/api/wallet/${userId}`
     );
     const data = await res.json();
     setBalance(data.balance);
@@ -33,7 +34,7 @@ function MyWallet() {
     try {
       // Step 1: Create Razorpay order via backend
       const response = await fetch(
-        'https://digihub-backend-o00g.onrender.com/api/wallet/create-order',
+        `${API_BASE_URL}/api/wallet/create-order`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -60,7 +61,7 @@ function MyWallet() {
         handler: async function () {
           // Step 3: Payment successful -> credit wallet
           await fetch(
-            'https://digihub-backend-o00g.onrender.com/api/wallet/add-money',
+            `${API_BASE_URL}/api/wallet/add-money`,
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },

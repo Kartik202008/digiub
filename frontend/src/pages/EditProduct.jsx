@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { API_BASE_URL } from "../api/config";
+import { invalidateProductCache } from "../api/products";
 
 function EditProduct() {
   const { id } = useParams();
@@ -16,7 +18,7 @@ function EditProduct() {
   });
 
   useEffect(() => {
-    fetch(`https://digihub-backend-o00g.onrender.com/api/products/${id}`)
+    fetch(`${API_BASE_URL}/api/products/${id}`)
       .then((res) => res.json())
       .then((data) => {
         setProduct({
@@ -28,7 +30,8 @@ function EditProduct() {
           image: data.images?.[0] || "",
           codAvailable: data.codAvailable !== undefined ? data.codAvailable : true,
         });
-      });
+      })
+      .catch((err) => console.error("Error fetching product:", err));
   }, [id]);
 
   const handleChange = (e) => {
@@ -51,7 +54,7 @@ function EditProduct() {
 
     const token = localStorage.getItem("token");
 
-    const res = await fetch(`https://digihub-backend-o00g.onrender.com/api/products/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/api/products/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -61,6 +64,7 @@ function EditProduct() {
     });
 
     if (res.ok) {
+      invalidateProductCache();
       alert("Product updated successfully!");
       navigate("/admin/products");
     } else {

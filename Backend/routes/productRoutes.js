@@ -17,7 +17,10 @@ router.get("/", async (req, res) => {
     if (bestSeller) filter.bestSeller = true;
 
 
-    const products = await Product.find(filter);
+    const products = await Product.find(filter)
+      .select('-reviews')
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.json(products);
 
